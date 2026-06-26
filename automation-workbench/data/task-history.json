@@ -1,5 +1,26 @@
 [
   {
+    "id": "history-2026-06-26-weekly-evolution-runner",
+    "createdAt": "2026-06-26T08:22:42.980Z",
+    "completedAt": "2026-06-26T08:22:42.980Z",
+    "category": "system",
+    "userText": "运行第二大脑 v4 每周自我迭代审计骨架",
+    "primaryAssistant": "Skill Scout",
+    "secondaryAssistants": [],
+    "skills": [
+      "documents"
+    ],
+    "sources": [
+      "local runner"
+    ],
+    "status": "completed",
+    "outputs": [
+      "outputs/weekly-evolution-audit-2026-06-26.md"
+    ],
+    "summary": "已生成每周自我迭代审计基础报告。",
+    "nextAction": "接入 GitHub/Codex Cloud 后让审计任务每周自动运行。"
+  },
+  {
     "id": "history-2026-06-26-cloud-daily-runner",
     "createdAt": "2026-06-26T07:02:17.132Z",
     "completedAt": "2026-06-26T07:02:17.132Z",
@@ -33,11 +54,20 @@
     "category": "system",
     "userText": "生成第二大脑 v4 云端化执行报告和下一步授权清单",
     "primaryAssistant": "交付助手",
-    "secondaryAssistants": ["Skill Scout"],
-    "skills": ["documents"],
-    "sources": ["本地云端接入包", "GitHub Actions runner 骨架"],
+    "secondaryAssistants": [
+      "Skill Scout"
+    ],
+    "skills": [
+      "documents"
+    ],
+    "sources": [
+      "本地云端接入包",
+      "GitHub Actions runner 骨架"
+    ],
     "status": "completed",
-    "outputs": ["outputs/second-brain-cloud-onboarding-report-2026-06-26.md"],
+    "outputs": [
+      "outputs/second-brain-cloud-onboarding-report-2026-06-26.md"
+    ],
     "summary": "已整理 Codex Cloud/GitHub 私有仓库接入路径、当前完成项、剩余人工授权点和下一步操作口令。",
     "nextAction": "用户完成 GitHub 与 Codex Cloud 连接后，继续初始化仓库、绑定远程并推送工作台。"
   },
