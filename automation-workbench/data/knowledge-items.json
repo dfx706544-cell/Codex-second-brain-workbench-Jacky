@@ -1,5 +1,25 @@
 [
   {
+    "id": "knowledge-2026-06-27-cloud-runner",
+    "createdAt": "2026-06-26T19:36:48.669Z",
+    "publishedAt": "2026-06-27",
+    "title": "第二大脑 v4 云端任务运行记录",
+    "summaryZh": "云端 runner 已能写入 outputs/ 和 automation-workbench/data/，并记录米促 API 余额监控与邮件交付状态。",
+    "sourceUrl": "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+    "sourceName": "本地/云端 runner",
+    "domain": "system",
+    "tags": [
+      "Codex Cloud",
+      "自动化",
+      "第二大脑",
+      "米促 API",
+      "邮件交付"
+    ],
+    "credibility": "本地或 CI 运行记录",
+    "impact": "证明云端或 CI 环境可以生成工作台可读取的数据文件。",
+    "nextAction": "接入可信搜索源、GitHub/Codex Cloud 定时执行、米促真实余额查询和 163 SMTP 授权。"
+  },
+  {
     "id": "knowledge-2026-06-26-cloud-runner",
     "createdAt": "2026-06-26T07:02:17.132Z",
     "publishedAt": "2026-06-26",

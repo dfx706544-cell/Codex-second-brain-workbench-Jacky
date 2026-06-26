@@ -1,5 +1,33 @@
 [
   {
+    "id": "history-2026-06-27-cloud-daily-runner",
+    "createdAt": "2026-06-26T19:36:48.669Z",
+    "completedAt": "2026-06-26T19:36:48.669Z",
+    "category": "system",
+    "userText": "运行第二大脑 v4 云端每日任务骨架",
+    "primaryAssistant": "资讯助手",
+    "secondaryAssistants": [
+      "交付助手",
+      "维护助手"
+    ],
+    "skills": [
+      "documents"
+    ],
+    "sources": [
+      "local runner"
+    ],
+    "status": "completed",
+    "outputs": [
+      "outputs/daily-brief-2026-06-27.md",
+      "outputs/business-feedback-2026-06-27.md",
+      "outputs/email-draft-daily-brief-2026-06-27.md",
+      "outputs/email-draft-business-feedback-2026-06-27.md",
+      "outputs/maintenance-report-2026-06-27.md"
+    ],
+    "summary": "已生成每日简报、业务反馈、维护巡检和两封邮件草稿，并记录 API 余额监控与邮件交付状态。",
+    "nextAction": "在 GitHub Actions Secrets 或 Codex Cloud 中配置联网搜索、米促 API 余额来源和 163 SMTP 授权码。"
+  },
+  {
     "id": "history-2026-06-26-weekly-evolution-runner",
     "createdAt": "2026-06-26T08:22:42.980Z",
     "completedAt": "2026-06-26T08:22:42.980Z",

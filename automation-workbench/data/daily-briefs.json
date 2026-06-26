@@ -1,5 +1,17 @@
 [
   {
+    "id": "daily-brief-2026-06-27",
+    "createdAt": "2026-06-26T19:36:48.669Z",
+    "date": "2026-06-27",
+    "title": "2026-06-27 第二大脑 v4 信息简报",
+    "summary": "云端任务已生成信息简报结构，待联网数据源补全真实新闻和来源链接。",
+    "outputs": [
+      "outputs/daily-brief-2026-06-27.md",
+      "outputs/email-draft-daily-brief-2026-06-27.md"
+    ],
+    "status": "draft"
+  },
+  {
     "id": "daily-brief-2026-06-26",
     "createdAt": "2026-06-26T07:02:17.132Z",
     "date": "2026-06-26",
