@@ -21,6 +21,26 @@ jobs:
           node-version: "22"
 
       - name: Run daily second-brain draft
+        env:
+          ANYSEARCH_API_KEY: ${{ secrets.ANYSEARCH_API_KEY }}
+          MICU_API_PROVIDER_NAME: ${{ vars.MICU_API_PROVIDER_NAME }}
+          MICU_API_LOW_BALANCE_CNY: ${{ vars.MICU_API_LOW_BALANCE_CNY }}
+          MICU_API_BALANCE_CNY: ${{ secrets.MICU_API_BALANCE_CNY }}
+          MICU_API_BALANCE_URL: ${{ secrets.MICU_API_BALANCE_URL }}
+          MICU_API_BILLING_URL: ${{ secrets.MICU_API_BILLING_URL }}
+          MICU_API_BALANCE_JSON_PATH: ${{ vars.MICU_API_BALANCE_JSON_PATH }}
+          MICU_API_AUTH_HEADER: ${{ vars.MICU_API_AUTH_HEADER }}
+          MICU_API_AUTH_SCHEME: ${{ vars.MICU_API_AUTH_SCHEME }}
+          MICU_API_KEY: ${{ secrets.MICU_API_KEY }}
+          MICU_API_TOKEN: ${{ secrets.MICU_API_TOKEN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_SECURE: ${{ vars.SMTP_SECURE }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          SEND_EMAIL: ${{ vars.SEND_EMAIL }}
         run: node automation-workbench/scripts/second-brain-cloud-runner.mjs daily
 
       - name: Commit generated drafts

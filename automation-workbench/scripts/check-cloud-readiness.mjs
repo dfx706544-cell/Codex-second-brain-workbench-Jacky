@@ -13,7 +13,10 @@ const REQUIRED_FILES = [
   "automation-workbench/cloud/cloud-daily-brief-prompt.md",
   "automation-workbench/cloud/cloud-weekly-evolution-prompt.md",
   "automation-workbench/cloud/cloud-sync-policy.md",
+  "automation-workbench/cloud/cloud-secrets-setup.md",
   "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+  "automation-workbench/scripts/api-budget-monitor.mjs",
+  "automation-workbench/scripts/email-delivery.mjs",
   ".github/workflows/second-brain-daily.yml",
   ".github/workflows/second-brain-weekly.yml",
   ".gitignore"

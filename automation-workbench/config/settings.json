@@ -154,5 +154,39 @@
     "installPolicy": "evaluate_first_confirm_specific_candidate_before_install",
     "preferredDestination": "C:\\Users\\嘉十一\\.codex\\skills",
     "notes": "Do not install arbitrary GitHub code silently. Evaluate source, risk, and files first."
+  },
+  "maintenance": {
+    "platformHealth": {
+      "enabled": true,
+      "cadence": "daily_light_weekly_full",
+      "checks": [
+        "open_url",
+        "login_or_auth_visible",
+        "queue_bridge",
+        "outputs_write",
+        "workflow_exists",
+        "skill_visible",
+        "cloud_sync",
+        "privacy_boundary"
+      ],
+      "backendFirst": true,
+      "foregroundFallback": "request_computer_control_then_stop_for_login_or_verification"
+    },
+    "apiBudget": {
+      "enabled": true,
+      "currency": "CNY",
+      "lowBalanceThresholdCny": 50,
+      "source": "Micu API / 米促 API",
+      "envPrefix": "MICU_API",
+      "balanceSource": "MICU_API_BALANCE_URL + MICU_API_KEY, or MICU_API_BALANCE_CNY for manual verified snapshots",
+      "action": "notify_recharge_needed",
+      "notes": "Only alert on a verified Micu API billing or balance source. If no source is configured, report that balance monitoring needs authorization instead of inventing an amount."
+    },
+    "automationHealth": {
+      "dailyBriefTime": "08:00",
+      "timezone": "Asia/Shanghai",
+      "weeklyMaintenance": "Monday 09:30",
+      "localOfflineBoundary": "Local workbench and local project automations need this PC and Codex app running. PC-off work requires Codex cloud, GitHub Actions, VPS, NAS, or another always-on runner."
+    }
   }
 }
