@@ -1,0 +1,152 @@
+{
+  "workspaceRoot": "C:\\Users\\嘉十一\\Documents\\Codex\\2026-06-24\\w",
+  "folders": {
+    "inputs": "inputs",
+    "outputs": "outputs",
+    "templates": "templates",
+    "workflows": "workflows"
+  },
+  "news": {
+    "defaultTime": "08:00",
+    "timezone": "Asia/Shanghai",
+    "briefName": "每日金融业务与自媒体信息简报",
+    "emailRecipient": "jacky060911@163.com",
+    "deliveryMode": "email_draft_and_outputs_files",
+    "topics": [
+      "US stock market",
+      "Hong Kong stock market",
+      "earnings and guidance",
+      "interest rates and central banks",
+      "macro policy",
+      "geopolitics",
+      "China business news",
+      "global business news",
+      "cross-border ecommerce",
+      "TikTok Shop",
+      "Kalodata",
+      "FastMoss",
+      "AI industry",
+      "creator economy",
+      "personal branding",
+      "TikTok",
+      "YouTube",
+      "Instagram",
+      "Douyin",
+      "WeChat Channels",
+      "Xiaohongshu",
+      "academic research"
+    ],
+    "sources": [
+      "AnySearch",
+      "verified web sources",
+      "official platform blogs or help centers",
+      "mainstream financial media",
+      "official filings",
+      "platform analytics tools",
+      "Chinese mainland sources",
+      "overseas sources",
+      "academic databases"
+    ]
+  },
+  "office": {
+    "defaultWorkflow": "combined-office-workflow",
+    "templateFolders": {
+      "excel": "templates/excel",
+      "ppt": "templates/ppt",
+      "word": "templates/word"
+    }
+  },
+  "delivery": {
+    "defaultMode": "draft_first_confirm_before_send",
+    "email": {
+      "recipient": "jacky060911@163.com",
+      "provider": "163",
+      "webUrl": "https://mail.163.com/",
+      "sendMode": "manual_confirmation_or_configured_secure_sender",
+      "noPasswordInChat": true
+    },
+    "social": {
+      "sendMode": "draft_first_confirm_before_send",
+      "platforms": [
+        "Feishu",
+        "WeChat",
+        "Email",
+        "TikTok",
+        "Instagram",
+        "Xiaohongshu"
+      ]
+    }
+  },
+  "analytics": {
+    "defaultWorkflow": "account-analytics-workflow",
+    "metrics": [
+      "outreach_count",
+      "reply_count",
+      "qualified_reply_count",
+      "deal_count",
+      "reply_rate",
+      "success_rate",
+      "deal_probability",
+      "views",
+      "impressions",
+      "watch_completion_rate",
+      "engagement_rate",
+      "clicks",
+      "conversion_rate",
+      "revenue"
+    ],
+    "dataPolicy": "read_user_authorized_visible_pages_or_inputs_exports_only"
+  },
+  "trading": {
+    "markets": [
+      "US stocks",
+      "Hong Kong stocks"
+    ],
+    "broker": {
+      "name": "Standard Chartered Hong Kong App",
+      "executionMode": "manual_confirmation_only",
+      "notes": "Codex can prepare alerts, watchlists, analysis, logs, and order checklists, but must not place unattended live orders through the app."
+    },
+    "mode": "alerts_paper_trading_manual_confirmation",
+    "liveTradingEnabled": false,
+    "requiresHumanConfirmation": true
+  },
+  "workAssistant": {
+    "platforms": [
+      {
+        "name": "Kalodata",
+        "url": "https://www.kalodata.com/",
+        "enabled": true,
+        "purpose": "TikTok Shop data, product research, creator analysis, videos, lives, and cross-border ecommerce insights"
+      },
+      {
+        "name": "FastMoss",
+        "url": "https://www.fastmoss.com/",
+        "enabled": true,
+        "purpose": "TikTok ecommerce analytics, product selection, competitor tracking, creator research, ads, live and video monitoring"
+      },
+      {
+        "name": "Feishu",
+        "url": "https://www.feishu.cn/messenger/",
+        "enabled": true,
+        "purpose": "Work messages and customer communication drafts"
+      },
+      {
+        "name": "WeChat",
+        "url": "https://wx.qq.com/",
+        "enabled": true,
+        "purpose": "Message triage and reply drafts with user confirmation"
+      }
+    ]
+  },
+  "editing": {
+    "capcutPath": "C:\\Users\\嘉十一\\AppData\\Local\\JianyingPro\\Apps\\JianyingPro.exe",
+    "draftFolder": "",
+    "mode": "creator_ip_assistant_and_edit_plan"
+  },
+  "skills": {
+    "installPolicy": "evaluate_first_confirm_specific_candidate_before_install",
+    "preferredDestination": "C:\\Users\\嘉十一\\.codex\\skills",
+    "notes": "Do not install arbitrary GitHub code silently. Evaluate source, risk, and files first."
+  }
+}

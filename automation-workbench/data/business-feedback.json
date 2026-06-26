@@ -1,0 +1,14 @@
+[
+  {
+    "id": "business-feedback-2026-06-26",
+    "createdAt": "2026-06-26T07:02:17.132Z",
+    "date": "2026-06-26",
+    "title": "2026-06-26 第二大脑 v4 业务反馈",
+    "summary": "云端任务骨架已生成业务反馈结构，待账号数据和平台数据接入后补全指标。",
+    "outputs": [
+      "outputs/business-feedback-2026-06-26.md",
+      "outputs/email-draft-business-feedback-2026-06-26.md"
+    ],
+    "status": "draft"
+  }
+]

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第二大脑自动化工作台 v4</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Second Brain Automation Workbench v4</p>
+      <h1>第二大脑自动化工作台</h1>
+    </div>
+    <div class="top-actions">
+      <button class="ghost" id="openWorkspaceButton" type="button">打开项目目录</button>
+      <button class="primary" id="copyQueueCommandButton" type="button">复制队列执行口令</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero-band">
+      <div>
+        <h2>从分析、执行，升级到交付和复盘</h2>
+        <p>工作台现在覆盖任务拆解、网站选择、文件交付、社交消息草稿、邮件简报、账号数据复盘、自媒体/IP 优化和 Skill Scout。外发、登录、安装和交易等敏感动作仍保留人工确认。</p>
+      </div>
+      <div class="mode-list" aria-label="执行方式">
+        <div>
+          <strong>当前模式</strong>
+          <span>工作台排队，Codex 执行，数据沉淀，外发前确认</span>
+        </div>
+        <div>
+          <strong>后台成长</strong>
+          <span>Codex 自动化定时生成简报、业务反馈和自我迭代审计</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="workbench-tabs" aria-label="工作台视图">
+      <button class="tab active" data-view="taskHub" type="button">任务中枢</button>
+      <button class="tab" data-view="knowledgeView" type="button">知识库</button>
+      <button class="tab" data-view="historyView" type="button">历史记录</button>
+      <button class="tab" data-view="dailyView" type="button">每日交付</button>
+      <button class="tab" data-view="profileView" type="button">个人画像</button>
+    </nav>
+
+    <section class="view active" id="taskHub">
+    <section class="workspace-grid">
+      <section class="panel task-panel" aria-label="任务输入">
+        <div class="panel-head">
+          <div>
+            <h2>任务中枢</h2>
+            <p>写你的目标，选择助手、平台、输出和交付方式。</p>
+          </div>
+          <button class="small" id="sampleButton" type="button">填入示例</button>
+        </div>
+
+        <form id="taskForm" class="task-form">
+          <label>
+            你的需求
+            <textarea id="userInput" rows="7" placeholder="例如：打开飞书和微信，帮我整理今天未回复的信息，先生成回复草稿；再把达人沟通成功率做成 Excel，给出明天跟进建议。"></textarea>
+          </label>
+
+          <div class="two-col">
+            <label>
+              主助手
+              <select id="assistantSelect"></select>
+            </label>
+            <label>
+              期望输出
+              <select id="outputSelect">
+                <option value="auto">自动判断</option>
+                <option value="xlsx">Excel 表格</option>
+                <option value="docx">Word 文档</option>
+                <option value="pptx">PPT 汇报</option>
+                <option value="brief">中文简报</option>
+                <option value="drafts">回复草稿</option>
+                <option value="email">邮件草稿</option>
+                <option value="dashboard">复盘看板</option>
+              </select>
+            </label>
+          </div>
+
+          <fieldset>
+            <legend>接入平台、网站或信息源</legend>
+            <div class="source-grid" id="sourceGrid"></div>
+          </fieldset>
+
+          <fieldset>
+            <legend>需要使用的能力</legend>
+            <div class="chip-grid" id="skillGrid"></div>
+          </fieldset>
+
+          <fieldset>
+            <legend>交付方式</legend>
+            <div class="chip-grid" id="deliveryGrid"></div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button class="ghost" id="previewTaskButton" type="button">预览任务</button>
+            <button class="primary" type="submit">加入执行队列</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="panel queue-panel" aria-label="任务队列">
+        <div class="panel-head">
+          <div>
+            <h2>执行队列</h2>
+            <p id="queueMeta">暂无任务。</p>
+          </div>
+          <button class="small danger" id="clearQueueButton" type="button">清空</button>
+        </div>
+        <div class="bridge-status" id="bridgeStatus" data-state="checking">正在检查共享队列...</div>
+        <div class="queue-list" id="queueList"></div>
+        <div class="queue-actions">
+          <button class="primary" id="copyLatestTaskButton" type="button">复制最新任务</button>
+          <button class="ghost" id="copyAllTasksButton" type="button">复制全部任务</button>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>助手入口</h2>
+          <p>每个助手都有默认工作流和安全边界，可按任务协同。</p>
+        </div>
+      </div>
+      <div class="module-grid" id="moduleGrid"></div>
+    </section>
+
+    <section class="insight-grid">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>信息助手</h2>
+            <p>飞书、微信、邮箱和社媒私信统一整理，先生成草稿。</p>
+          </div>
+          <button class="small" id="copyInboxPromptButton" type="button">复制处理任务</button>
+        </div>
+        <div class="mini-list">
+          <span>读取可见消息，按紧急度和业务价值分组</span>
+          <span>生成中文回复草稿、英文商务话术和跟进提醒</span>
+          <span>发送前必须由你确认</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>账号数据复盘</h2>
+            <p>每天读取你授权页面里的作品、沟通和转化数据。</p>
+          </div>
+          <button class="small" id="copyAnalyticsPromptButton" type="button">复制复盘任务</button>
+        </div>
+        <div class="mini-list">
+          <span>达人沟通：回复率、成功率、成交概率和话术优化</span>
+          <span>内容作品：流量、完播、互动、变现和转化</span>
+          <span>输出明日动作建议和可测试假设</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>8 点邮件简报</h2>
+            <p>中文解读，覆盖中外信息源，保留真实链接。</p>
+          </div>
+          <button class="small" id="copyBriefPromptButton" type="button">复制简报任务</button>
+        </div>
+        <div class="mini-list">
+          <span>收件邮箱：jacky060911@163.com</span>
+          <span>生成报表、文件、中文解读和来源链接</span>
+          <span>真正发信需要邮箱授权或发送前确认</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>自媒体/IP 助手</h2>
+            <p>由剪辑助手升级而来，覆盖选题、脚本、剪辑、发布和变现。</p>
+          </div>
+          <button class="small" id="copyCreatorPromptButton" type="button">复制增长任务</button>
+        </div>
+        <div class="mini-list">
+          <span>定位：人设、赛道、差异化表达</span>
+          <span>内容：选题、脚本、剪辑节奏、标题封面</span>
+          <span>商业：转化路径、带货、私域和合作报价</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>实时知识库</h2>
+            <p>市场、平台、学术和业务机会，按来源归档。</p>
+          </div>
+          <button class="small" id="copyKnowledgePromptButton" type="button">复制更新任务</button>
+        </div>
+        <div class="mini-list">
+          <span>中国大陆和海外信息源并行</span>
+          <span>英文资料统一转成通俗中文解读</span>
+          <span>无法验证的信息标注待核实</span>
+        </div>
+      </section>
+
+      <section class="panel warning">
+        <div class="panel-head">
+          <div>
+            <h2>安全边界</h2>
+            <p>交付越自动，确认越重要。</p>
+          </div>
+        </div>
+        <div class="mini-list">
+          <span>账号密码、验证码、支付和交易由你亲自处理</span>
+          <span>微信、飞书、邮件等外发动作先生成草稿</span>
+          <span>安装第三方 skill 前先评估来源和风险</span>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel preview-panel">
+      <div class="panel-head">
+        <div>
+          <h2>任务预览</h2>
+          <p>这里显示最近一次生成的 Codex 执行任务。</p>
+        </div>
+      </div>
+      <pre><code id="taskPreview">还没有生成任务。你可以先写需求并点击“预览任务”。</code></pre>
+    </section>
+    </section>
+
+    <section class="view" id="knowledgeView">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>知识库</h2>
+            <p>像图书馆一样浏览已收录的资料、原文链接、可信度和下一步动作。</p>
+          </div>
+          <select id="knowledgeFilter">
+            <option value="all">全部主题</option>
+          </select>
+        </div>
+        <div class="library-grid" id="knowledgeList"></div>
+      </section>
+    </section>
+
+    <section class="view" id="historyView">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>历史记录</h2>
+            <p>查询通过工作台完成过的任务、分类、输出文件和下一步动作。</p>
+          </div>
+          <select id="historyFilter">
+            <option value="all">全部分类</option>
+          </select>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </section>
+
+    <section class="view" id="dailyView">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>每日交付</h2>
+            <p>信息简报和业务反馈分开生成、分开归档、分开准备邮件草稿。</p>
+          </div>
+        </div>
+        <div class="delivery-board" id="dailyDeliveryBoard"></div>
+      </section>
+    </section>
+
+    <section class="view" id="profileView">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>个人画像</h2>
+            <p>记录目标、偏好、约束和工作方式，让工作台越来越懂你。</p>
+          </div>
+        </div>
+        <div class="profile-board" id="profileBoard"></div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="./modules.js"></script>
+  <script src="./app.js"></script>
+  <script src="./hover-translate.js"></script>
+</body>
+</html>

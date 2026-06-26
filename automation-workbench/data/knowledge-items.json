@@ -1,0 +1,94 @@
+[
+  {
+    "id": "knowledge-2026-06-26-cloud-runner",
+    "createdAt": "2026-06-26T07:02:17.132Z",
+    "publishedAt": "2026-06-26",
+    "title": "第二大脑 v4 云端任务骨架运行记录",
+    "summaryZh": "云端 runner 已能写入 outputs/ 和 automation-workbench/data/，为后续联网简报、业务反馈和知识库同步打基础。",
+    "sourceUrl": "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+    "sourceName": "本地云端 runner",
+    "domain": "system",
+    "tags": [
+      "Codex Cloud",
+      "自动化",
+      "第二大脑"
+    ],
+    "credibility": "本地运行记录",
+    "impact": "证明云端或 CI 环境可以生成工作台可读取的数据文件。",
+    "nextAction": "接入可信搜索源和 GitHub/Codex Cloud 定时执行。"
+  },
+  {
+    "id": "knowledge-2026-06-25-workbench-v4",
+    "createdAt": "2026-06-25T00:00:00.000Z",
+    "publishedAt": "2026-06-25",
+    "title": "第二大脑工作台 v4 数据中枢设计",
+    "summaryZh": "工作台将以数据中枢为地基，统一沉淀知识、历史、简报、业务反馈、个人画像、健康和成长资料。",
+    "sourceUrl": "docs/superpowers/specs/2026-06-25-second-brain-v4-data-hub-design.md",
+    "sourceName": "本地设计文档",
+    "domain": "system",
+    "tags": [
+      "第二大脑",
+      "工作台",
+      "数据中枢"
+    ],
+    "credibility": "本地设计",
+    "relatedAssistants": [
+      "Skill Scout",
+      "个人画像助手"
+    ],
+    "impact": "为后续知识库、历史记录和每日交付提供统一数据结构。",
+    "nextAction": "实现 v4 数据中枢和页面。"
+  },
+  {
+    "id": "knowledge-2026-06-26-codex-autonomy-boundary",
+    "createdAt": "2026-06-26T00:00:00.000+08:00",
+    "publishedAt": "2026-06-26",
+    "title": "第二大脑 v4 的自动化和关机后运行边界",
+    "summaryZh": "本地工作台负责前台驾驶舱和数据展示；Codex 自动化负责定时执行；电脑关机后仍继续运行需要远程/云端/VPS/NAS/云函数等常久在线层。",
+    "sourceUrl": "outputs/codex-skills-plugins-workbench-audit-2026-06-26.md",
+    "sourceName": "本地审计报告",
+    "domain": "system",
+    "tags": [
+      "第二大脑",
+      "自动化",
+      "Codex",
+      "skills",
+      "plugins",
+      "关机后运行"
+    ],
+    "credibility": "本地审计 + OpenAI Codex Manual",
+    "relatedAssistants": [
+      "Skill Scout",
+      "资讯助手",
+      "交付助手",
+      "个人画像助手"
+    ],
+    "impact": "明确哪些任务可自主执行，哪些必须人工确认，并确认真正关机后运行需要云端或常久在线执行层。",
+    "nextAction": "配置远程/云端执行环境，并为每日邮件推送配置安全发送器。"
+  },
+  {
+    "id": "knowledge-2026-06-26-cloud-first-architecture",
+    "createdAt": "2026-06-26T00:00:00.000+08:00",
+    "publishedAt": "2026-06-26",
+    "title": "第二大脑 v4 关机后自动化的推荐架构",
+    "summaryZh": "推荐先用 Codex Cloud + GitHub 私有仓库做云端执行层：云端生成每日简报、业务反馈和知识库更新，提交到仓库；本地开机后同步仓库并由工作台展示。VPS/NAS 可作为后续更稳定的 24 小时任务层。",
+    "sourceUrl": "automation-workbench/cloud/README.md",
+    "sourceName": "本地云端接入包",
+    "domain": "system",
+    "tags": [
+      "Codex Cloud",
+      "GitHub",
+      "第二大脑",
+      "自动化",
+      "同步"
+    ],
+    "credibility": "本地架构设计 + OpenAI Codex Manual",
+    "relatedAssistants": [
+      "Skill Scout",
+      "资讯助手",
+      "交付助手"
+    ],
+    "impact": "把本地工作台从单机工具升级为可被云端持续喂养的数据中枢。",
+    "nextAction": "完成 GitHub 私有仓库连接，并在 Codex Cloud 中选择该仓库配置环境和每日任务。"
+  }
+]

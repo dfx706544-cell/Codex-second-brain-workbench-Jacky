@@ -1,0 +1,128 @@
+[
+  {
+    "id": "history-2026-06-26-cloud-daily-runner",
+    "createdAt": "2026-06-26T07:02:17.132Z",
+    "completedAt": "2026-06-26T07:02:17.132Z",
+    "category": "system",
+    "userText": "运行第二大脑 v4 云端每日任务骨架",
+    "primaryAssistant": "资讯助手",
+    "secondaryAssistants": [
+      "交付助手",
+      "个人画像助手"
+    ],
+    "skills": [
+      "documents"
+    ],
+    "sources": [
+      "local runner"
+    ],
+    "status": "completed",
+    "outputs": [
+      "outputs/daily-brief-2026-06-26.md",
+      "outputs/business-feedback-2026-06-26.md",
+      "outputs/email-draft-daily-brief-2026-06-26.md",
+      "outputs/email-draft-business-feedback-2026-06-26.md"
+    ],
+    "summary": "已生成每日简报、业务反馈和两封邮件草稿的基础结构。",
+    "nextAction": "在 Codex Cloud 或 GitHub Actions 中接入联网搜索和真实来源记录。"
+  },
+  {
+    "id": "history-2026-06-26-cloud-onboarding-report",
+    "createdAt": "2026-06-26T00:00:00.000+08:00",
+    "completedAt": "2026-06-26T00:00:00.000+08:00",
+    "category": "system",
+    "userText": "生成第二大脑 v4 云端化执行报告和下一步授权清单",
+    "primaryAssistant": "交付助手",
+    "secondaryAssistants": ["Skill Scout"],
+    "skills": ["documents"],
+    "sources": ["本地云端接入包", "GitHub Actions runner 骨架"],
+    "status": "completed",
+    "outputs": ["outputs/second-brain-cloud-onboarding-report-2026-06-26.md"],
+    "summary": "已整理 Codex Cloud/GitHub 私有仓库接入路径、当前完成项、剩余人工授权点和下一步操作口令。",
+    "nextAction": "用户完成 GitHub 与 Codex Cloud 连接后，继续初始化仓库、绑定远程并推送工作台。"
+  },
+  {
+    "id": "history-2026-06-25-skill-install",
+    "createdAt": "2026-06-25T00:00:00.000Z",
+    "completedAt": "2026-06-25T00:00:00.000Z",
+    "category": "system",
+    "userText": "安装 10 个常用 skills 并接入工作台",
+    "primaryAssistant": "Skill Scout",
+    "secondaryAssistants": [],
+    "skills": [
+      "skill-installer",
+      "anysearch",
+      "browser"
+    ],
+    "sources": [
+      "GitHub"
+    ],
+    "status": "completed",
+    "outputs": [
+      "outputs/skill-installation-record-2026-06-25.md"
+    ],
+    "summary": "已安装并接入 10 个扩展 skills。",
+    "nextAction": "重启 Codex 以加载新 skills。"
+  },
+  {
+    "id": "history-2026-06-26-v4-autonomy-audit",
+    "createdAt": "2026-06-26T00:00:00.000+08:00",
+    "completedAt": "2026-06-26T00:00:00.000+08:00",
+    "category": "system",
+    "userText": "审计第二大脑 v4 的本地化、自动化、skills/plugins、记忆和关机后运行边界",
+    "primaryAssistant": "Skill Scout",
+    "secondaryAssistants": [
+      "个人画像助手",
+      "交付助手"
+    ],
+    "skills": [
+      "openai-docs",
+      "skill-installer",
+      "plugin-creator",
+      "skill-creator"
+    ],
+    "sources": [
+      "OpenAI Codex Manual",
+      "本机 Codex 配置",
+      "工作台配置"
+    ],
+    "status": "completed",
+    "outputs": [
+      "outputs/codex-skills-plugins-workbench-audit-2026-06-26.md"
+    ],
+    "summary": "已盘点当前 Codex plugins、skills、工作台登记能力和自动化任务，补齐工作台 skill 选择区，并新增每周自我迭代审计自动化。",
+    "nextAction": "接入远程或云端常久在线环境，才能实现电脑关机后继续运行。"
+  },
+  {
+    "id": "history-2026-06-26-cloud-onboarding-pack",
+    "createdAt": "2026-06-26T00:00:00.000+08:00",
+    "completedAt": "2026-06-26T00:00:00.000+08:00",
+    "category": "system",
+    "userText": "打开远程连接或云端项目能力，实现关机后自我迭代和真正自动化",
+    "primaryAssistant": "Skill Scout",
+    "secondaryAssistants": [
+      "资讯助手",
+      "交付助手",
+      "个人画像助手"
+    ],
+    "skills": [
+      "openai-docs",
+      "documents"
+    ],
+    "sources": [
+      "OpenAI Codex Manual",
+      "Codex Cloud",
+      "本地工作台配置"
+    ],
+    "status": "completed",
+    "outputs": [
+      "automation-workbench/cloud/README.md",
+      "automation-workbench/cloud/codex-cloud-setup-checklist.md",
+      "automation-workbench/cloud/cloud-daily-brief-prompt.md",
+      "automation-workbench/cloud/cloud-weekly-evolution-prompt.md",
+      "automation-workbench/cloud/cloud-sync-policy.md"
+    ],
+    "summary": "已打开 Codex Cloud 和云端环境入口，并生成第二大脑 v4 云端接入包。当前本地项目尚未绑定 GitHub 远程仓库，需要用户完成 GitHub/Codex Cloud 授权。",
+    "nextAction": "用户在浏览器中完成 Codex Cloud 登录和 GitHub 私有仓库连接后，再继续初始化仓库、推送项目并配置云端每日任务。"
+  }
+]

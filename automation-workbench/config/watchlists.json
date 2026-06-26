@@ -1,0 +1,85 @@
+{
+  "financialMarkets": {
+    "markets": [
+      "US stocks",
+      "Hong Kong stocks"
+    ],
+    "strongPriceMoveNewsTypes": [
+      "earnings beat or miss",
+      "revenue guidance change",
+      "profit warning",
+      "analyst upgrade or downgrade",
+      "share buyback",
+      "dividend change",
+      "M&A rumor or announcement",
+      "major customer or supplier news",
+      "regulatory approval or investigation",
+      "lawsuit or settlement",
+      "interest rate decision",
+      "inflation data",
+      "employment data",
+      "currency move",
+      "commodity price shock",
+      "geopolitical escalation",
+      "sector policy change",
+      "short seller report",
+      "insider transaction",
+      "index inclusion or removal"
+    ],
+    "shortTermSignalChecklist": [
+      "news catalyst",
+      "pre-market or opening gap",
+      "volume surge",
+      "relative strength versus index",
+      "support and resistance level",
+      "risk reward ratio",
+      "stop loss level",
+      "planned position size",
+      "paper trade log"
+    ],
+    "longTermInvestmentReview": [
+      "business quality",
+      "industry growth",
+      "competitive advantage",
+      "management quality",
+      "profitability",
+      "cash flow",
+      "balance sheet risk",
+      "valuation",
+      "regulatory risk",
+      "currency risk",
+      "fund expense ratio",
+      "fund tracking error",
+      "fund drawdown history"
+    ]
+  },
+  "businessAndCreatorPlatforms": {
+    "crossBorderTools": [
+      "Kalodata",
+      "FastMoss"
+    ],
+    "platforms": [
+      "TikTok",
+      "YouTube",
+      "Instagram",
+      "Douyin",
+      "WeChat Channels",
+      "Xiaohongshu"
+    ],
+    "creatorIntelTopics": [
+      "trending content formats",
+      "hook patterns",
+      "algorithm and recommendation changes",
+      "ecommerce conversion tactics",
+      "live commerce trends",
+      "short video script patterns",
+      "creator monetization",
+      "platform policy changes",
+      "ad product updates",
+      "audience retention tactics",
+      "keyword and search trend shifts",
+      "new feature rollouts"
+    ]
+  }
+}
+

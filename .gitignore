@@ -1,0 +1,32 @@
+# Local runtime and cache
+.tmp/
+**/.tmp/
+$portableDir/
+node_modules/
+.pytest_cache/
+__pycache__/
+
+# Codex local state
+.codex/
+.agents/cache/
+
+# Workbench local runtime logs
+automation-workbench/queue/bridge-status.json
+automation-workbench/queue/bridge-*.log
+automation-workbench/queue/*.tmp
+
+# Sensitive local inputs
+inputs/private/
+inputs/secrets/
+*.env
+.env
+.env.*
+
+# Office temporary files
+~$*.docx
+~$*.pptx
+~$*.xlsx
+
+# OS files
+Thumbs.db
+.DS_Store
