@@ -5,6 +5,7 @@ $portableDir/
 node_modules/
 .pytest_cache/
 __pycache__/
+.pages-site/
 
 # Codex local state
 .codex/

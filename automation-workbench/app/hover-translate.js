@@ -33,6 +33,8 @@
     "Gmail": "谷歌邮箱",
     "Kalodata": "TikTok 电商数据分析平台",
     "FastMoss": "TikTok 电商数据与达人分析平台",
+    "TikClubs": "达秘，TikTok 网红达人自动营销和 BD 线索工具",
+    "Dami": "达秘，TikTok 网红达人自动营销工具",
     "TikTok": "海外短视频平台",
     "TikTok Shop": "TikTok 电商平台",
     "YouTube": "海外视频平台",

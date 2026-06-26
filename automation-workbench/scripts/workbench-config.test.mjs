@@ -10,6 +10,25 @@ async function loadWorkbenchConfig() {
   return sandbox.window;
 }
 
+async function loadSettings() {
+  return JSON.parse(await readFile(new URL("../config/settings.json", import.meta.url), "utf8"));
+}
+
+test("workbench exposes an operations center tab and view", async () => {
+  const html = await readFile(new URL("../app/index.html", import.meta.url), "utf8");
+
+  assert.match(html, /data-view="opsView"/);
+  assert.match(html, /id="opsView"/);
+  assert.match(html, /queue-state\.js/);
+});
+
+test("workbench bridge discovery can find fallback operation-center ports", async () => {
+  const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
+
+  assert.match(appSource, /operationsCenter/);
+  assert.match(appSource, /8796/);
+});
+
 test("workbench includes second-brain v4 assistant modules", async () => {
   const config = await loadWorkbenchConfig();
   const modules = new Map(config.WORKBENCH_MODULES.map((module) => [module.id, module]));
@@ -52,4 +71,25 @@ test("workbench exposes currently available Codex extension skills", async () =>
   ]) {
     assert.ok(skillIds.has(id), `${id} should be visible in the workbench skill picker`);
   }
+});
+
+test("workbench exposes Dami TikClubs for ecommerce BD workflows", async () => {
+  const config = await loadWorkbenchConfig();
+  const settings = await loadSettings();
+  const crossBorderWorkflow = await readFile(new URL("../workflows/cross-border-inquiry-workflow.md", import.meta.url), "utf8");
+  const accountAnalyticsWorkflow = await readFile(new URL("../workflows/account-analytics-workflow.md", import.meta.url), "utf8");
+  const sources = new Map(config.WORKBENCH_SOURCES.map((source) => [source.id, source]));
+  const platformNames = new Set(settings.workAssistant.platforms.map((platform) => platform.name));
+  const workModule = config.WORKBENCH_MODULES.find((module) => module.id === "work");
+
+  assert.ok(sources.has("dami_tikclubs"), "Dami / TikClubs should be selectable as a platform");
+  assert.equal(sources.get("dami_tikclubs").url, "https://www.tikclubs.com/workbench/function_introduction");
+  assert.ok(sources.get("dami_tikclubs").defaultModules.includes("work"));
+  assert.ok(sources.get("dami_tikclubs").defaultModules.includes("analytics"));
+  assert.ok(platformNames.has("达秘 / TikClubs"), "Dami / TikClubs should be configured for open-platform.ps1");
+  assert.ok(config.ASSISTANT_ROUTING.work.includes("达秘"));
+  assert.ok(config.ASSISTANT_ROUTING.work.includes("tikclubs"));
+  assert.match(workModule.prompt, /达秘 \/ TikClubs/);
+  assert.match(crossBorderWorkflow, /达秘 \/ TikClubs/);
+  assert.match(accountAnalyticsWorkflow, /达秘 \/ TikClubs/);
 });

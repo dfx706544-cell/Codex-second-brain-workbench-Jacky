@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { createReadStream } from "node:fs";
-import { access, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -32,6 +32,49 @@ const DATA_FILES = new Map([
   ["health-log", "health-log.json"],
   ["growth-library", "growth-library.json"]
 ]);
+
+const CLOUD_READINESS_FILES = [
+  {
+    id: "cloud-readme",
+    label: "云端执行说明",
+    path: "automation-workbench/cloud/README.md"
+  },
+  {
+    id: "codex-cloud-checklist",
+    label: "Codex Cloud 接入清单",
+    path: "automation-workbench/cloud/codex-cloud-setup-checklist.md"
+  },
+  {
+    id: "daily-brief-prompt",
+    label: "每日简报云端提示词",
+    path: "automation-workbench/cloud/cloud-daily-brief-prompt.md"
+  },
+  {
+    id: "weekly-evolution-prompt",
+    label: "每周自我迭代提示词",
+    path: "automation-workbench/cloud/cloud-weekly-evolution-prompt.md"
+  },
+  {
+    id: "cloud-sync-policy",
+    label: "云端到本地同步规则",
+    path: "automation-workbench/cloud/cloud-sync-policy.md"
+  },
+  {
+    id: "cloud-runner",
+    label: "第二大脑云端 runner",
+    path: "automation-workbench/scripts/second-brain-cloud-runner.mjs"
+  },
+  {
+    id: "github-daily-workflow",
+    label: "GitHub 每日工作流",
+    path: ".github/workflows/second-brain-daily.yml"
+  },
+  {
+    id: "github-weekly-workflow",
+    label: "GitHub 每周进化工作流",
+    path: ".github/workflows/second-brain-weekly.yml"
+  }
+];
 
 function jsonResponse(res, status, payload) {
   res.writeHead(status, {
@@ -180,11 +223,188 @@ function createWorkbenchBridge(options = {}) {
     return parseJsonFile(raw, name === "personal-profile" ? {} : []);
   }
 
+  async function readExistingDataStore(name) {
+    const fileName = DATA_FILES.get(name);
+    if (!fileName) {
+      throw new Error("Unknown data store.");
+    }
+    const filePath = path.join(dataDir, fileName);
+    if (!(await fileExists(filePath))) {
+      return name === "personal-profile" ? {} : [];
+    }
+    const raw = await readFile(filePath, "utf8");
+    return parseJsonFile(raw, name === "personal-profile" ? {} : []);
+  }
+
   async function writeDataStore(name, value) {
     const filePath = await ensureDataFile(name);
     const tmpPath = `${filePath}.tmp`;
     await writeFile(tmpPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
     await rename(tmpPath, filePath);
+  }
+
+  function latestByDate(items, dateFields) {
+    if (!Array.isArray(items) || !items.length) return null;
+    return [...items].sort((left, right) => {
+      const leftDate = dateFields.map((field) => Date.parse(left?.[field] || "") || 0).find(Boolean) || 0;
+      const rightDate = dateFields.map((field) => Date.parse(right?.[field] || "") || 0).find(Boolean) || 0;
+      return rightDate - leftDate;
+    })[0];
+  }
+
+  function normalizeOutputPath(outputPath) {
+    if (!outputPath || typeof outputPath !== "string") return "";
+    return outputPath.replaceAll("\\", "/").replace(/^\/+/, "");
+  }
+
+  async function listLatestOutputs(limit = 8) {
+    const outputsRoot = path.join(workspaceRoot, "outputs");
+    if (!(await fileExists(outputsRoot))) return [];
+    const found = [];
+
+    async function walk(currentDir) {
+      const entries = await readdir(currentDir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(currentDir, entry.name);
+        if (entry.isDirectory()) {
+          await walk(fullPath);
+          continue;
+        }
+        if (!entry.isFile()) continue;
+        const fileStat = await stat(fullPath);
+        found.push({
+          path: normalizeOutputPath(path.relative(workspaceRoot, fullPath)),
+          modifiedAt: fileStat.mtime.toISOString(),
+          size: fileStat.size
+        });
+      }
+    }
+
+    await walk(outputsRoot);
+    return found
+      .sort((left, right) => Date.parse(right.modifiedAt) - Date.parse(left.modifiedAt))
+      .slice(0, limit);
+  }
+
+  async function summarizeCloudReadiness() {
+    const checks = [];
+    for (const check of CLOUD_READINESS_FILES) {
+      checks.push({
+        ...check,
+        ok: await fileExists(path.join(workspaceRoot, check.path))
+      });
+    }
+    const passed = checks.filter((check) => check.ok).length;
+    return {
+      passed,
+      total: checks.length,
+      status: passed === checks.length ? "ready" : "needs_setup",
+      checks
+    };
+  }
+
+  function buildReminders() {
+    return [
+      {
+        id: "daily-brief",
+        title: "每日 8 点信息简报",
+        schedule: "每天 08:00 Asia/Shanghai",
+        delivery: "生成 outputs 文件和 163 邮箱草稿",
+        status: "configured_as_prompt"
+      },
+      {
+        id: "business-feedback",
+        title: "每日业务反馈",
+        schedule: "每天 08:00 Asia/Shanghai",
+        delivery: "单独生成业务反馈邮件草稿",
+        status: "configured_as_prompt"
+      },
+      {
+        id: "weekly-evolution",
+        title: "每周工作台自我迭代审计",
+        schedule: "每周一次",
+        delivery: "检查可改进模块、技能候选和稳定性问题",
+        status: "configured_as_prompt"
+      }
+    ];
+  }
+
+  function buildConfirmations() {
+    return [
+      {
+        id: "external-send",
+        title: "外发消息和邮件",
+        detail: "微信、飞书、邮箱、社媒私信等发送前仍需要你确认。"
+      },
+      {
+        id: "account-login",
+        title: "账号登录和验证码",
+        detail: "密码、验证码、支付、交易和授权页面由你亲自处理。"
+      },
+      {
+        id: "skill-install",
+        title: "第三方 skills 安装",
+        detail: "会先评估来源、权限和风险，再等你确认具体候选。"
+      },
+      {
+        id: "cloud-secrets",
+        title: "云端密钥配置",
+        detail: "如果要关机后自动发邮件和联网更新，需要你在云端配置安全密钥。"
+      }
+    ];
+  }
+
+  async function buildOperationsStatus() {
+    const [
+      tasks,
+      taskHistory,
+      knowledgeItems,
+      dailyBriefs,
+      businessFeedback,
+      healthLog,
+      growthLibrary,
+      bridgeStatus,
+      latestOutputs,
+      cloudReadiness
+    ] = await Promise.all([
+      readQueue(),
+      readExistingDataStore("task-history"),
+      readExistingDataStore("knowledge-items"),
+      readExistingDataStore("daily-briefs"),
+      readExistingDataStore("business-feedback"),
+      readExistingDataStore("health-log"),
+      readExistingDataStore("growth-library"),
+      fileExists(statusPath).then((exists) => exists ? readFile(statusPath, "utf8").then((raw) => parseJsonFile(raw, {})) : {}),
+      listLatestOutputs(),
+      summarizeCloudReadiness()
+    ]);
+    const latestCompletedTask = latestByDate(taskHistory, ["completedAt", "createdAt"]);
+
+    return {
+      generatedAt: new Date().toISOString(),
+      queue: {
+        pendingCount: tasks.length,
+        latestTask: latestByDate(tasks, ["createdAt"]),
+        queuePath
+      },
+      dataHub: {
+        knowledgeItems: Array.isArray(knowledgeItems) ? knowledgeItems.length : 0,
+        taskHistory: Array.isArray(taskHistory) ? taskHistory.length : 0,
+        dailyBriefs: Array.isArray(dailyBriefs) ? dailyBriefs.length : 0,
+        businessFeedback: Array.isArray(businessFeedback) ? businessFeedback.length : 0,
+        healthLog: Array.isArray(healthLog) ? healthLog.length : 0,
+        growthLibrary: Array.isArray(growthLibrary) ? growthLibrary.length : 0
+      },
+      latestCompletedTask,
+      latestOutputs,
+      cloudReadiness,
+      reminders: buildReminders(),
+      confirmations: buildConfirmations(),
+      bridge: {
+        connected: Boolean(bridgeStatus?.baseUrl),
+        ...bridgeStatus
+      }
+    };
   }
 
   async function handleApi(req, res, url) {
@@ -198,11 +418,17 @@ function createWorkbenchBridge(options = {}) {
         ok: true,
         capabilities: {
           dataHub: true,
+          operationsCenter: true,
           sharedQueue: true
         },
         queuePath,
         workbenchRoot
       });
+      return;
+    }
+
+    if (url.pathname === "/api/status" && req.method === "GET") {
+      jsonResponse(res, 200, await buildOperationsStatus());
       return;
     }
 

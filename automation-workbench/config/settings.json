@@ -126,6 +126,12 @@
         "purpose": "TikTok ecommerce analytics, product selection, competitor tracking, creator research, ads, live and video monitoring"
       },
       {
+        "name": "达秘 / TikClubs",
+        "url": "https://www.tikclubs.com/workbench/function_introduction",
+        "enabled": true,
+        "purpose": "TikTok creator discovery, influencer outreach, automated marketing leads, BD follow-up lists, and TikTok KOL/KOC candidate expansion"
+      },
+      {
         "name": "Feishu",
         "url": "https://www.feishu.cn/messenger/",
         "enabled": true,

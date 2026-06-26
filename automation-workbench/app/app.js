@@ -1,4 +1,5 @@
 const STORAGE_KEY = "automationWorkbench.taskQueue.v3";
+const PERSONALIZATION_KEY = "automationWorkbench.personalization.v1";
 
 const assistantSelect = document.querySelector("#assistantSelect");
 const clearQueueButton = document.querySelector("#clearQueueButton");
@@ -9,8 +10,10 @@ const copyCreatorPromptButton = document.querySelector("#copyCreatorPromptButton
 const copyInboxPromptButton = document.querySelector("#copyInboxPromptButton");
 const copyKnowledgePromptButton = document.querySelector("#copyKnowledgePromptButton");
 const copyLatestTaskButton = document.querySelector("#copyLatestTaskButton");
+const copyPersonalWorkbenchPromptButton = document.querySelector("#copyPersonalWorkbenchPromptButton");
 const copyQueueCommandButton = document.querySelector("#copyQueueCommandButton");
 const deliveryGrid = document.querySelector("#deliveryGrid");
+const downloadPersonalConfigButton = document.querySelector("#downloadPersonalConfigButton");
 const bridgeStatus = document.querySelector("#bridgeStatus");
 const dailyDeliveryBoard = document.querySelector("#dailyDeliveryBoard");
 const historyFilter = document.querySelector("#historyFilter");
@@ -20,11 +23,22 @@ const knowledgeList = document.querySelector("#knowledgeList");
 const moduleGrid = document.querySelector("#moduleGrid");
 const openWorkspaceButton = document.querySelector("#openWorkspaceButton");
 const outputSelect = document.querySelector("#outputSelect");
+const personalBoundariesInput = document.querySelector("#personalBoundariesInput");
+const personalDeliveryInput = document.querySelector("#personalDeliveryInput");
+const personalPlatformsInput = document.querySelector("#personalPlatformsInput");
+const personalRoleInput = document.querySelector("#personalRoleInput");
 const profileBoard = document.querySelector("#profileBoard");
 const previewTaskButton = document.querySelector("#previewTaskButton");
 const queueList = document.querySelector("#queueList");
 const queueMeta = document.querySelector("#queueMeta");
+const opsCloud = document.querySelector("#opsCloud");
+const opsConfirmations = document.querySelector("#opsConfirmations");
+const opsOutputs = document.querySelector("#opsOutputs");
+const opsReminders = document.querySelector("#opsReminders");
+const opsSummary = document.querySelector("#opsSummary");
+const refreshOpsButton = document.querySelector("#refreshOpsButton");
 const sampleButton = document.querySelector("#sampleButton");
+const savePersonalWorkbenchButton = document.querySelector("#savePersonalWorkbenchButton");
 const skillGrid = document.querySelector("#skillGrid");
 const sourceGrid = document.querySelector("#sourceGrid");
 const taskForm = document.querySelector("#taskForm");
@@ -46,6 +60,76 @@ const dataHub = {
   profile: {}
 };
 
+function isCloudShareMode() {
+  return window.location.hostname.endsWith("github.io");
+}
+
+function loadPersonalWorkbenchConfig() {
+  try {
+    return JSON.parse(localStorage.getItem(PERSONALIZATION_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function collectPersonalWorkbenchConfig() {
+  return {
+    role: personalRoleInput?.value.trim() || "",
+    platforms: personalPlatformsInput?.value.trim() || "",
+    boundaries: personalBoundariesInput?.value.trim() || "",
+    delivery: personalDeliveryInput?.value.trim() || "",
+    savedAt: new Date().toISOString()
+  };
+}
+
+function savePersonalWorkbenchConfig() {
+  const config = collectPersonalWorkbenchConfig();
+  localStorage.setItem(PERSONALIZATION_KEY, JSON.stringify(config, null, 2));
+  return config;
+}
+
+function hydratePersonalWorkbenchConfig() {
+  const config = loadPersonalWorkbenchConfig();
+  if (personalRoleInput) personalRoleInput.value = config.role || "";
+  if (personalPlatformsInput) personalPlatformsInput.value = config.platforms || "";
+  if (personalBoundariesInput) personalBoundariesInput.value = config.boundaries || "";
+  if (personalDeliveryInput) personalDeliveryInput.value = config.delivery || "";
+}
+
+function buildPersonalWorkbenchPrompt(config = collectPersonalWorkbenchConfig()) {
+  return `请基于 Jacky 的第二大脑自动化工作台公共模板，帮我搭建一个属于我自己的个性化自动化工作台。
+
+我的身份和业务方向：
+${config.role || "请先引导我补充身份、业务方向和主要工作流。"}
+
+我希望接入的平台：
+${config.platforms || "请先引导我列出需要接入的平台、网站、工具和账号权限。"}
+
+我的安全边界：
+${config.boundaries || "默认不处理密码、验证码、支付、交易和未经确认的外发动作。"}
+
+我的交付方式：
+${config.delivery || "请帮我设计每日简报、任务队列、文件交付、历史记录和知识库。"}
+
+请注意：
+1. 不要连接或复用 Jacky 的本地队列、数据、outputs、GitHub Actions、账号权限或自动化后端。
+2. 请为我创建独立配置、独立数据目录、独立队列和独立云端部署方案。
+3. 涉及登录、发消息、发邮件、交易、安装第三方代码或授权时，必须先让我确认。
+4. 最终用中文告诉我需要安装什么、如何部署、如何日常使用。`;
+}
+
+function downloadPersonalWorkbenchConfig(config = collectPersonalWorkbenchConfig()) {
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "my-second-brain-workbench-config.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function loadLocalQueue() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -58,12 +142,22 @@ function saveLocalQueue() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
 }
 
+function clearLocalQueueSyncState() {
+  queue = queue.map((task) => {
+    const { syncState, ...cleanTask } = task;
+    return cleanTask;
+  });
+  saveLocalQueue();
+}
+
 function bridgeCandidates() {
   const candidates = [];
   if (window.location.protocol === "http:" || window.location.protocol === "https:") {
     candidates.push(window.location.origin);
   }
-  candidates.push("http://127.0.0.1:8787", "http://127.0.0.1:8788", "http://127.0.0.1:8789");
+  for (let port = 8787; port <= 8796; port += 1) {
+    candidates.push(`http://127.0.0.1:${port}`);
+  }
   return Array.from(new Set(candidates));
 }
 
@@ -109,23 +203,13 @@ async function saveQueue() {
   }
 }
 
-function mergeQueues(sharedQueue, localQueue) {
-  const byId = new Map();
-  [...localQueue, ...sharedQueue].forEach((task) => {
-    if (task?.id) byId.set(task.id, task);
-  });
-  return Array.from(byId.values()).sort((a, b) => {
-    const left = Date.parse(a.createdAt || "") || 0;
-    const right = Date.parse(b.createdAt || "") || 0;
-    return right - left;
-  });
-}
-
 async function findBridge() {
   for (const candidate of bridgeCandidates()) {
     try {
       const response = await fetch(`${candidate}/api/health`, { cache: "no-store" });
-      if (response.ok) return candidate;
+      if (!response.ok) continue;
+      const health = await response.json();
+      if (health?.capabilities?.dataHub && health?.capabilities?.operationsCenter) return candidate;
     } catch {
       // Try the next local bridge candidate.
     }
@@ -155,6 +239,126 @@ function setActiveView(viewId) {
 
 function optionList(values) {
   return ["all", ...Array.from(new Set(values.filter(Boolean)))];
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN");
+}
+
+function renderOpsCard(title, value, detail, state = "neutral") {
+  return `
+    <article class="ops-card" data-state="${state}">
+      <span>${escapeHtml(title)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <p>${escapeHtml(detail)}</p>
+    </article>
+  `;
+}
+
+function renderOpsList(container, items, emptyText, renderItem) {
+  if (!container) return;
+  container.innerHTML = items?.length
+    ? items.map(renderItem).join("")
+    : `<div class="empty-state">${escapeHtml(emptyText)}</div>`;
+}
+
+function renderOperationsStatus(status) {
+  if (!opsSummary) return;
+  const cloudStatus = status.cloudReadiness?.status === "ready" ? "ready" : "needs_setup";
+  const latestTask = status.latestCompletedTask;
+  const latestTaskTitle = latestTask?.userText || latestTask?.summary || "暂无完成记录";
+
+  opsSummary.innerHTML = [
+    renderOpsCard("待处理队列", `${status.queue?.pendingCount ?? 0} 个`, "来自共享队列 tasks.json", status.queue?.pendingCount ? "warning" : "ready"),
+    renderOpsCard("知识库条目", `${status.dataHub?.knowledgeItems ?? 0} 条`, "市场、系统、平台与学习资料", "neutral"),
+    renderOpsCard("历史任务", `${status.dataHub?.taskHistory ?? 0} 条`, "按电商、金融、系统等分类沉淀", "neutral"),
+    renderOpsCard("每日简报", `${status.dataHub?.dailyBriefs ?? 0} 份`, "信息简报归档数量", "neutral"),
+    renderOpsCard("业务反馈", `${status.dataHub?.businessFeedback ?? 0} 份`, "账号复盘和 BD 反馈归档数量", "neutral"),
+    renderOpsCard("云端准备", `${status.cloudReadiness?.passed ?? 0}/${status.cloudReadiness?.total ?? 0}`, cloudStatus === "ready" ? "基础文件已齐" : "仍有云端文件待补齐", cloudStatus === "ready" ? "ready" : "warning")
+  ].join("");
+
+  renderOpsList(opsOutputs, status.latestOutputs, "还没有检测到 outputs/ 文件。", (item) => `
+    <article class="ops-row">
+      <div>
+        <strong>${escapeHtml(item.path)}</strong>
+        <span>更新时间：${escapeHtml(formatDateTime(item.modifiedAt))} · ${(Number(item.size) / 1024).toFixed(1)} KB</span>
+      </div>
+    </article>
+  `);
+
+  renderOpsList(opsCloud, status.cloudReadiness?.checks || [], "还没有云端准备检查。", (check) => `
+    <article class="ops-row">
+      <div>
+        <strong>${escapeHtml(check.label)}</strong>
+        <span>${escapeHtml(check.path)}</span>
+      </div>
+      <em data-state="${check.ok ? "ready" : "warning"}">${check.ok ? "已具备" : "待补齐"}</em>
+    </article>
+  `);
+
+  renderOpsList(opsReminders, status.reminders, "还没有周期任务提醒。", (reminder) => `
+    <article class="ops-row">
+      <div>
+        <strong>${escapeHtml(reminder.title)}</strong>
+        <span>${escapeHtml(reminder.schedule)} · ${escapeHtml(reminder.delivery)}</span>
+      </div>
+      <em>${escapeHtml(reminder.status)}</em>
+    </article>
+  `);
+
+  renderOpsList(opsConfirmations, status.confirmations, "暂无待确认事项。", (confirmation) => `
+    <article class="ops-row">
+      <div>
+        <strong>${escapeHtml(confirmation.title)}</strong>
+        <span>${escapeHtml(confirmation.detail)}</span>
+      </div>
+    </article>
+  `);
+
+  if (latestTask) {
+    opsSummary.insertAdjacentHTML("beforeend", renderOpsCard(
+      "最近完成",
+      latestTask.id || "已完成任务",
+      `${latestTaskTitle.slice(0, 48)} · ${formatDateTime(latestTask.completedAt || latestTask.createdAt)}`,
+      "ready"
+    ));
+  }
+}
+
+function renderOperationsUnavailable(text) {
+  if (!opsSummary) return;
+  opsSummary.innerHTML = `<div class="empty-state">${escapeHtml(text)}</div>`;
+  [opsOutputs, opsCloud, opsReminders, opsConfirmations].forEach((container) => {
+    if (container) container.innerHTML = `<div class="empty-state">连接共享队列服务后显示。</div>`;
+  });
+}
+
+async function loadOperationsStatus() {
+  if (!bridgeBaseUrl) {
+    renderOperationsUnavailable("尚未连接共享队列服务。请使用 open-workbench.ps1 打开工作台。");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${bridgeBaseUrl}/api/status`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Status read failed: ${response.status}`);
+    renderOperationsStatus(await response.json());
+  } catch {
+    renderOperationsUnavailable("运行中心状态读取失败。请确认工作台桥接服务仍在运行。");
+  }
 }
 
 function renderKnowledge() {
@@ -250,6 +454,16 @@ async function loadDataHub() {
 
 async function initSharedQueue() {
   try {
+    if (isCloudShareMode()) {
+      bridgeConnected = false;
+      document.querySelector("#cloudPersonalizationPanel")?.removeAttribute("hidden");
+      hydratePersonalWorkbenchConfig();
+      setBridgeStatus("connected", "云端分享模式：此页面不会连接 Jacky 电脑里的本地队列。你在这里加入的任务只保存在当前浏览器。");
+      renderQueue();
+      renderOperationsUnavailable("云端分享模式：运行中心不读取 Jacky 的本地数据、outputs、历史记录或账号信息。");
+      return;
+    }
+
     bridgeBaseUrl = await findBridge();
     if (!bridgeBaseUrl) {
       setBridgeStatus("local", "本地备份模式：未连接到共享队列服务。请使用 open-workbench.ps1 打开工作台。");
@@ -258,20 +472,23 @@ async function initSharedQueue() {
 
     const sharedQueue = await fetchSharedQueue();
     const localQueue = loadLocalQueue();
+    const merged = window.WorkbenchQueueState.mergeSharedAndLocalQueues(sharedQueue, localQueue);
     bridgeConnected = true;
-    queue = mergeQueues(sharedQueue, localQueue);
+    queue = merged.queue;
 
-    if (queue.length !== sharedQueue.length || localQueue.length) {
+    if (merged.shouldUpload) {
       await saveSharedQueue();
     }
 
-    saveLocalQueue();
+    clearLocalQueueSyncState();
     setBridgeStatus("connected", "共享队列已连接：加入队列后会写入 automation-workbench/queue/tasks.json，Codex 可直接读取。");
     renderQueue();
     await loadDataHub();
+    await loadOperationsStatus();
   } catch {
     bridgeConnected = false;
     setBridgeStatus("local", "本地备份模式：未连接到共享队列服务。请使用 open-workbench.ps1 打开工作台。");
+    renderOperationsUnavailable("本地备份模式：运行中心需要共享队列服务。请使用 open-workbench.ps1 打开工作台。");
   }
 }
 
@@ -566,12 +783,16 @@ function previewCurrentTask() {
 }
 
 async function addTaskToQueue() {
-  const task = previewCurrentTask();
+  let task = previewCurrentTask();
   if (!task) return;
+  if (!bridgeConnected) {
+    task = window.WorkbenchQueueState.toLocalPendingTask(task);
+  }
   queue.unshift(task);
   await saveQueue();
   renderQueue();
-  showToast(bridgeConnected ? "已加入共享执行队列" : "已加入本地队列");
+  await loadOperationsStatus();
+  showToast(bridgeConnected ? "已加入共享执行队列" : "已加入当前浏览器队列");
 }
 
 function allTasksText() {
@@ -596,6 +817,10 @@ tabs.forEach((tab) => {
 });
 knowledgeFilter?.addEventListener("change", renderKnowledge);
 historyFilter?.addEventListener("change", renderHistory);
+refreshOpsButton?.addEventListener("click", async () => {
+  await loadOperationsStatus();
+  showToast("运行中心已刷新");
+});
 
 sampleButton.addEventListener("click", () => {
   userInput.value = "打开飞书、微信和 163 邮箱，帮我整理今天未回复的信息，先生成回复草稿；再读取我提供的达人沟通记录和作品数据，分析沟通成功率、流量、转化，并输出明天的自媒体/IP 和电商 BD 优化建议。";
@@ -638,10 +863,27 @@ copyKnowledgePromptButton.addEventListener("click", async () => {
   await copyText(window.WORKBENCH_PROMPTS.knowledgeUpdate, "已复制知识库更新任务");
 });
 
+savePersonalWorkbenchButton?.addEventListener("click", () => {
+  savePersonalWorkbenchConfig();
+  showToast("个性化配置已保存到当前浏览器");
+});
+
+downloadPersonalConfigButton?.addEventListener("click", () => {
+  const config = savePersonalWorkbenchConfig();
+  downloadPersonalWorkbenchConfig(config);
+  showToast("配置 JSON 已导出");
+});
+
+copyPersonalWorkbenchPromptButton?.addEventListener("click", async () => {
+  const config = savePersonalWorkbenchConfig();
+  await copyText(buildPersonalWorkbenchPrompt(config), "已复制个性化搭建提示词");
+});
+
 clearQueueButton.addEventListener("click", async () => {
   queue = [];
   await saveQueue();
   renderQueue();
+  await loadOperationsStatus();
   showToast("队列已清空");
 });
 
@@ -668,6 +910,7 @@ queueList.addEventListener("click", async (event) => {
     queue = queue.filter((item) => item.id !== deleteId);
     await saveQueue();
     renderQueue();
+    await loadOperationsStatus();
     showToast("任务已删除");
   }
 });

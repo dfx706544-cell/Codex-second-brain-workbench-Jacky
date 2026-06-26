@@ -38,6 +38,7 @@
 
     <nav class="workbench-tabs" aria-label="工作台视图">
       <button class="tab active" data-view="taskHub" type="button">任务中枢</button>
+      <button class="tab" data-view="opsView" type="button">运行中心</button>
       <button class="tab" data-view="knowledgeView" type="button">知识库</button>
       <button class="tab" data-view="historyView" type="button">历史记录</button>
       <button class="tab" data-view="dailyView" type="button">每日交付</button>
@@ -45,6 +46,38 @@
     </nav>
 
     <section class="view active" id="taskHub">
+    <section class="panel cloud-personalization" id="cloudPersonalizationPanel" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>个性化工作台配置</h2>
+          <p>这是公共模板模式。配置只保存在当前浏览器，不会连接 Jacky 的本地部署、队列、数据或自动化后端。</p>
+        </div>
+        <button class="small" id="copyPersonalWorkbenchPromptButton" type="button">复制搭建提示词</button>
+      </div>
+      <div class="personalization-grid">
+        <label>
+          你的身份和业务方向
+          <textarea id="personalRoleInput" rows="3" placeholder="例如：我是跨境电商美区 BD，重点做 TikTok Shop 达人建联和内容投放。"></textarea>
+        </label>
+        <label>
+          你希望接入的平台
+          <textarea id="personalPlatformsInput" rows="3" placeholder="例如：Kalodata、FastMoss、飞书、Gmail、剪映、Notion。"></textarea>
+        </label>
+        <label>
+          你的安全边界
+          <textarea id="personalBoundariesInput" rows="3" placeholder="例如：不自动发送消息，不处理密码和验证码，交易只做提醒不下单。"></textarea>
+        </label>
+        <label>
+          你的交付方式
+          <textarea id="personalDeliveryInput" rows="3" placeholder="例如：每天 8 点中文简报，Excel 报表，邮件草稿，任务历史归档。"></textarea>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="ghost" id="savePersonalWorkbenchButton" type="button">保存到本浏览器</button>
+        <button class="primary" id="downloadPersonalConfigButton" type="button">导出配置 JSON</button>
+      </div>
+    </section>
+
     <section class="workspace-grid">
       <section class="panel task-panel" aria-label="任务输入">
         <div class="panel-head">
@@ -232,6 +265,63 @@
     </section>
     </section>
 
+    <section class="view" id="opsView">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>运行中心</h2>
+            <p>集中查看队列、交付、知识库、云端准备和需要你确认的事项。</p>
+          </div>
+          <button class="small" id="refreshOpsButton" type="button">刷新状态</button>
+        </div>
+        <div class="ops-grid" id="opsSummary"></div>
+      </section>
+
+      <section class="ops-columns">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>最近交付</h2>
+              <p>outputs/ 中最近生成或更新的文件。</p>
+            </div>
+          </div>
+          <div class="ops-list" id="opsOutputs"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>云端准备</h2>
+              <p>用于关机后自动化和开机同步的基础文件检查。</p>
+            </div>
+          </div>
+          <div class="ops-list" id="opsCloud"></div>
+        </section>
+      </section>
+
+      <section class="ops-columns">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>自动化提醒</h2>
+              <p>目前已经沉淀成提示词或计划的周期性任务。</p>
+            </div>
+          </div>
+          <div class="ops-list" id="opsReminders"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>待确认事项</h2>
+              <p>涉及账号、外发、安装和云端密钥时仍需要人工确认。</p>
+            </div>
+          </div>
+          <div class="ops-list" id="opsConfirmations"></div>
+        </section>
+      </section>
+    </section>
+
     <section class="view" id="knowledgeView">
       <section class="panel">
         <div class="panel-head">
@@ -290,6 +380,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="./modules.js"></script>
+  <script src="./queue-state.js"></script>
   <script src="./app.js"></script>
   <script src="./hover-translate.js"></script>
 </body>

@@ -24,7 +24,7 @@ function Get-WorkbenchBridgeHealth {
   try {
     $HealthUrl = "http://127.0.0.1:$Port/api/health"
     $Health = Invoke-WebRequest -UseBasicParsing -Uri $HealthUrl -TimeoutSec 1 | ConvertFrom-Json
-    if ($Health.capabilities.dataHub -eq $true -and $Health.workbenchRoot -eq $Root) {
+    if ($Health.capabilities.dataHub -eq $true -and $Health.capabilities.operationsCenter -eq $true -and $Health.workbenchRoot -eq $Root) {
       return $Health
     }
   } catch {

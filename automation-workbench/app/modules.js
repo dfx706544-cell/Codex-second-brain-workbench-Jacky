@@ -47,7 +47,7 @@ window.WORKBENCH_MODULES = [
     description: "打开或参考跨境电商平台，筛选商品、达人、竞品、视频/直播表现、询盘和跟进清单。",
     skills: ["browser", "anysearch", "spreadsheets"],
     workflow: "automation-workbench/workflows/cross-border-inquiry-workflow.md",
-    prompt: "结合 Kalodata、FastMoss、社交平台和公开网页信息，整理跨境电商机会、达人、竞品、询盘质量、沟通记录和跟进清单。"
+    prompt: "结合 Kalodata、FastMoss、达秘 / TikClubs、社交平台和公开网页信息，整理跨境电商机会、达人、竞品、询盘质量、触达线索、沟通记录和跟进清单。"
   },
   {
     id: "inbox",
@@ -138,6 +138,7 @@ window.WORKBENCH_SOURCES = [
   { id: "gmail", name: "Gmail", group: "邮件", url: "https://mail.google.com/", defaultModules: ["inbox", "delivery"], note: "海外邮件来源和商务邮件草稿。" },
   { id: "kalodata", name: "Kalodata", group: "跨境电商", url: "https://www.kalodata.com/", defaultModules: ["work", "analytics"], note: "TikTok Shop 商品、达人、视频、直播和店铺分析。" },
   { id: "fastmoss", name: "FastMoss", group: "跨境电商", url: "https://www.fastmoss.com/", defaultModules: ["work", "analytics"], note: "TikTok 电商选品、竞品、达人、广告和直播数据。" },
+  { id: "dami_tikclubs", name: "达秘 / TikClubs", group: "跨境电商", url: "https://www.tikclubs.com/workbench/function_introduction", defaultModules: ["work", "analytics"], note: "TikTok 网红达人自动营销、达人搜索、触达线索和 BD 跟进候选池。" },
   { id: "tiktok", name: "TikTok", group: "创作者平台", url: "https://www.tiktok.com/", defaultModules: ["news", "work", "creator", "analytics"], note: "美区内容趋势、达人表现、私信、作品数据和带货素材。" },
   { id: "youtube", name: "YouTube", group: "创作者平台", url: "https://www.youtube.com/", defaultModules: ["news", "creator", "analytics"], note: "视频趋势、创作者生态、作品数据和平台功能。" },
   { id: "instagram", name: "Instagram", group: "创作者平台", url: "https://www.instagram.com/", defaultModules: ["news", "work", "creator", "analytics"], note: "Reels、私信、达人内容和品牌合作。" },
@@ -190,7 +191,7 @@ window.ASSISTANT_ROUTING = {
   office: ["word", "docx", "ppt", "powerpoint", "excel", "xlsx", "csv", "报表", "文档", "幻灯片", "会议纪要", "表格"],
   news: ["新闻", "资讯", "热点", "时政", "社会", "平台玩法", "算法", "知识库", "简报", "实时", "学术", "论文", "早报", "日报"],
   trading: ["股票", "美股", "港股", "基金", "交易", "短线", "超短线", "涨跌", "财报", "评级", "渣打", "风控", "信号"],
-  work: ["询盘", "kalodata", "fastmoss", "跨境", "选品", "达人", "kol", "koc", "ugc", "竞品", "直播", "tiktok shop", "bd", "成交"],
+  work: ["询盘", "kalodata", "fastmoss", "达秘", "tikclubs", "跨境", "选品", "达人", "kol", "koc", "ugc", "竞品", "直播", "tiktok shop", "bd", "成交"],
   inbox: ["飞书", "微信", "私信", "消息", "回复", "话术", "邮件", "邮箱", "客户", "社交", "未读"],
   delivery: ["发送", "邮件", "交付", "附件", "发给", "收件人", "草稿", "外发", "汇报给"],
   analytics: ["数据", "复盘", "成功率", "转化", "变现", "流量", "完播", "互动", "账号数据", "作品数据", "成交概率"],

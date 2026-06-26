@@ -228,6 +228,18 @@ p {
   gap: 16px;
 }
 
+.cloud-personalization {
+  margin: 16px 0;
+  border-left: 5px solid var(--accent);
+}
+
+.personalization-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 label,
 fieldset {
   display: grid;
@@ -504,7 +516,9 @@ select:focus {
 .library-grid,
 .history-list,
 .delivery-board,
-.profile-board {
+.profile-board,
+.ops-grid,
+.ops-list {
   display: grid;
   gap: 10px;
 }
@@ -516,6 +530,103 @@ select:focus {
 .delivery-board,
 .profile-board {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ops-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ops-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.ops-card,
+.ops-row {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf9;
+  padding: 13px;
+}
+
+.ops-card {
+  min-height: 128px;
+}
+
+.ops-card span,
+.ops-card strong,
+.ops-card p {
+  display: block;
+}
+
+.ops-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ops-card strong {
+  margin: 8px 0 7px;
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.ops-card[data-state="ready"] {
+  border-color: #b9d8ce;
+  background: #eaf5f1;
+}
+
+.ops-card[data-state="warning"] {
+  border-color: #e1cf9e;
+  background: #fff8df;
+}
+
+.ops-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.ops-row strong,
+.ops-row span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.ops-row span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ops-row em {
+  align-self: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 8px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.ops-row em[data-state="ready"] {
+  border-color: #b9d8ce;
+  background: #eaf5f1;
+  color: var(--accent-dark);
+}
+
+.ops-row em[data-state="warning"] {
+  border-color: #e1cf9e;
+  background: #fff8df;
+  color: #78530f;
 }
 
 .library-card,
@@ -620,6 +731,8 @@ code {
   .workspace-grid,
   .three-col,
   .insight-grid,
+  .ops-grid,
+  .ops-columns,
   .library-grid,
   .delivery-board,
   .profile-board {
@@ -640,6 +753,7 @@ code {
 
   .top-actions,
   .two-col,
+  .personalization-grid,
   .form-actions,
   .queue-actions {
     width: 100%;

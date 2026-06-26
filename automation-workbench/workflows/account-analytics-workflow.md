@@ -5,7 +5,7 @@
 ## 数据来源
 
 - 用户已登录且授权可见的平台后台。
-- Kalodata、FastMoss、TikTok、抖音、小红书、视频号、YouTube、Instagram 等页面中可见数据。
+- Kalodata、FastMoss、达秘 / TikClubs、TikTok、抖音、小红书、视频号、YouTube、Instagram 等页面中可见数据。
 - `inputs/` 中用户导出的 CSV、Excel、截图说明或手动记录。
 
 ## 指标

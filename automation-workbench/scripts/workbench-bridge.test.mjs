@@ -128,6 +128,72 @@ test("bridge health exposes data hub capability", async () => {
     assert.equal(response.status, 200);
     const payload = await response.json();
     assert.equal(payload.capabilities.dataHub, true);
+    assert.equal(payload.capabilities.operationsCenter, true);
+  } finally {
+    await bridge.stop();
+    await rm(fixture.workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test("bridge status summarizes operations center health", async () => {
+  const fixture = await makeFixture();
+  await mkdir(path.join(fixture.workbenchRoot, "queue"), { recursive: true });
+  await mkdir(path.join(fixture.workbenchRoot, "data"), { recursive: true });
+  await mkdir(path.join(fixture.workspaceRoot, "outputs", "task-ops"), { recursive: true });
+  await writeFile(
+    path.join(fixture.workbenchRoot, "queue", "tasks.json"),
+    JSON.stringify([{ id: "task-pending", createdAt: "2026-06-26T08:00:00.000Z", userText: "pending task" }], null, 2),
+    "utf8"
+  );
+  await writeFile(
+    path.join(fixture.workbenchRoot, "data", "task-history.json"),
+    JSON.stringify([{
+      id: "task-done",
+      completedAt: "2026-06-26T09:00:00.000Z",
+      userText: "done task",
+      outputs: ["outputs/task-ops/report.md"]
+    }], null, 2),
+    "utf8"
+  );
+  await writeFile(
+    path.join(fixture.workbenchRoot, "data", "knowledge-items.json"),
+    JSON.stringify([{ id: "k1" }, { id: "k2" }], null, 2),
+    "utf8"
+  );
+  await writeFile(
+    path.join(fixture.workbenchRoot, "data", "daily-briefs.json"),
+    JSON.stringify([{ id: "brief-1" }], null, 2),
+    "utf8"
+  );
+  await writeFile(
+    path.join(fixture.workbenchRoot, "data", "business-feedback.json"),
+    JSON.stringify([{ id: "feedback-1" }], null, 2),
+    "utf8"
+  );
+  await writeFile(path.join(fixture.workspaceRoot, "outputs", "task-ops", "report.md"), "# Report\n", "utf8");
+
+  const bridge = createWorkbenchBridge({
+    workspaceRoot: fixture.workspaceRoot,
+    workbenchRoot: fixture.workbenchRoot,
+    host: "127.0.0.1",
+    port: 0
+  });
+
+  try {
+    const { baseUrl } = await bridge.start();
+    const response = await fetch(`${baseUrl}/api/status`);
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.queue.pendingCount, 1);
+    assert.equal(payload.dataHub.knowledgeItems, 2);
+    assert.equal(payload.dataHub.taskHistory, 1);
+    assert.equal(payload.dataHub.dailyBriefs, 1);
+    assert.equal(payload.dataHub.businessFeedback, 1);
+    assert.equal(payload.latestCompletedTask.id, "task-done");
+    assert.equal(payload.latestOutputs[0].path, "outputs/task-ops/report.md");
+    assert.ok(payload.cloudReadiness.checks.some((check) => check.id === "codex-cloud-checklist"));
+    assert.ok(payload.reminders.some((reminder) => reminder.id === "daily-brief"));
+    assert.ok(payload.confirmations.some((confirmation) => confirmation.id === "external-send"));
   } finally {
     await bridge.stop();
     await rm(fixture.workspaceRoot, { recursive: true, force: true });
