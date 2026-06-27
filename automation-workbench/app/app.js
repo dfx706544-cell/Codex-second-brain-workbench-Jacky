@@ -53,7 +53,7 @@ let queue = loadLocalQueue();
 let latestTaskText = "";
 let bridgeConnected = false;
 let bridgeBaseUrl = "";
-const CLOUD_TEMPLATE_URL = "https://dfx706544-cell.github.io/Codex-second-brain-workbench-Jacky/automation-workbench/app/";
+const CLOUD_TEMPLATE_URL = "https://dfx706544-cell.github.io/wuyin-second-brain-workbench-template/automation-workbench/app/";
 const dataHub = {
   knowledge: [],
   history: [],
