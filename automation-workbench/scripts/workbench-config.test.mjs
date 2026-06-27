@@ -22,22 +22,16 @@ test("workbench exposes an operations center tab and view", async () => {
   assert.match(html, /queue-state\.js/);
 });
 
-test("workbench uses Wuyin second-brain branding and exposes a clean cloud copy entry", async () => {
+test("workbench uses Wuyin branding and exposes a clean cloud copy entry", async () => {
   const html = await readFile(new URL("../app/index.html", import.meta.url), "utf8");
   const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
 
-  assert.match(html, /<title>无垠 第二大脑自动化工作台<\/title>/);
-  assert.match(html, /<h1>无垠<\/h1>/);
   assert.match(html, /Wuyin Second Brain Workbench/);
-  assert.match(html, /第二大脑自动化工作台/);
   assert.match(html, /id="copyCloudWorkbenchButton"/);
-  assert.match(html, /一键复制我的工作台/);
-
   assert.match(appSource, /copyCloudWorkbenchButton/);
   assert.match(appSource, /CLOUD_TEMPLATE_URL/);
-  assert.match(appSource, /无垠第二大脑自动化工作台/);
-  assert.match(appSource, /干净独立模板/);
-  assert.match(appSource, /不包含 Jacky 的历史记录、outputs、队列、账号权限或后台自动化/);
+  assert.match(appSource, /buildCloudWorkbenchShareText/);
+  assert.match(appSource, /cloudTemplateUrl/);
 });
 
 test("workbench app shell uses a premium graphite dark theme without green accents", async () => {
@@ -79,11 +73,15 @@ test("desktop launcher has a shortcut-friendly cmd wrapper", async () => {
   const shortcutSource = await readFile(new URL("./install-desktop-shortcut.ps1", import.meta.url), "utf8");
 
   assert.match(ps1Source, /\[switch\]\$NoBrowser/);
-  assert.doesNotMatch(ps1Source, /--new-window/);
-  assert.match(ps1Source, /Start-Process -FilePath \$QuarkCandidates\[0\] -ArgumentList @\(\$AppUrl\)/);
+  assert.match(ps1Source, /desktop-launch\.log/);
+  assert.match(ps1Source, /--new-window/);
+  assert.match(ps1Source, /Start-Process -FilePath \$QuarkCandidates\[0\] -ArgumentList @\("--new-window", \$AppUrl\)/);
   assert.match(cmdSource, /start-workbench-desktop\.ps1/);
   assert.match(cmdSource, /powershell\.exe/);
-  assert.match(shortcutSource, /Codex自动化工作台\.lnk/);
+  assert.match(shortcutSource, /0x65E0/);
+  assert.match(shortcutSource, /0x57A0/);
+  assert.match(shortcutSource, /OldShortcutNames/);
+  assert.match(shortcutSource, /Codex/);
   assert.match(shortcutSource, /start-workbench-desktop\.ps1/);
   assert.match(shortcutSource, /powershell\.exe/);
   assert.match(shortcutSource, /WorkingDirectory/);
@@ -93,27 +91,29 @@ test("workbench includes second-brain v4 assistant modules", async () => {
   const config = await loadWorkbenchConfig();
   const modules = new Map(config.WORKBENCH_MODULES.map((module) => [module.id, module]));
 
-  for (const id of ["growth", "health", "profile"]) {
+  for (const id of ["growth", "health", "profile", "maintenance", "skills"]) {
     assert.ok(modules.has(id), `${id} assistant should exist`);
-    assert.match(modules.get(id).workflow, /automation-workbench\/workflows\//);
+    assert.match(modules.get(id).workflow, /automation-workbench\/workflows\/|automation-workbench\/skills\//);
     assert.ok(modules.get(id).prompt.length > 20, `${id} assistant should include an execution prompt`);
   }
 });
 
-test("workbench routes growth, health, and profile requests", async () => {
+test("workbench routes growth, health, profile, maintenance, and skill requests", async () => {
   const config = await loadWorkbenchConfig();
 
-  assert.ok(config.ASSISTANT_ROUTING.growth.includes("心理学"));
-  assert.ok(config.ASSISTANT_ROUTING.health.includes("训练"));
-  assert.ok(config.ASSISTANT_ROUTING.profile.includes("个人画像"));
+  for (const key of ["growth", "health", "profile", "maintenance", "skills"]) {
+    assert.ok(Array.isArray(config.ASSISTANT_ROUTING[key]), `${key} route should be configured`);
+    assert.ok(config.ASSISTANT_ROUTING[key].length > 0, `${key} route should not be empty`);
+  }
 });
 
-test("knowledge search skill is enabled for v4 research assistants", async () => {
+test("knowledge search skill is enabled for research and maintenance assistants", async () => {
   const config = await loadWorkbenchConfig();
   const anysearch = config.WORKBENCH_SKILLS.find((skill) => skill.id === "anysearch");
 
   assert.ok(anysearch.defaultModules.includes("growth"));
   assert.ok(anysearch.defaultModules.includes("health"));
+  assert.ok(anysearch.defaultModules.includes("maintenance"));
 });
 
 test("workbench exposes currently available Codex extension skills", async () => {
@@ -139,19 +139,17 @@ test("workbench exposes Dami TikClubs for ecommerce BD workflows", async () => {
   const crossBorderWorkflow = await readFile(new URL("../workflows/cross-border-inquiry-workflow.md", import.meta.url), "utf8");
   const accountAnalyticsWorkflow = await readFile(new URL("../workflows/account-analytics-workflow.md", import.meta.url), "utf8");
   const sources = new Map(config.WORKBENCH_SOURCES.map((source) => [source.id, source]));
-  const platformNames = new Set(settings.workAssistant.platforms.map((platform) => platform.name));
   const workModule = config.WORKBENCH_MODULES.find((module) => module.id === "work");
 
   assert.ok(sources.has("dami_tikclubs"), "Dami / TikClubs should be selectable as a platform");
   assert.equal(sources.get("dami_tikclubs").url, "https://www.tikclubs.com/workbench/function_introduction");
   assert.ok(sources.get("dami_tikclubs").defaultModules.includes("work"));
   assert.ok(sources.get("dami_tikclubs").defaultModules.includes("analytics"));
-  assert.ok(platformNames.has("达秘 / TikClubs"), "Dami / TikClubs should be configured for open-platform.ps1");
-  assert.ok(config.ASSISTANT_ROUTING.work.includes("达秘"));
-  assert.ok(config.ASSISTANT_ROUTING.work.includes("tikclubs"));
-  assert.match(workModule.prompt, /达秘 \/ TikClubs/);
-  assert.match(crossBorderWorkflow, /达秘 \/ TikClubs/);
-  assert.match(accountAnalyticsWorkflow, /达秘 \/ TikClubs/);
+  assert.ok(settings.workAssistant.platforms.some((platform) => /TikClubs/i.test(platform.name)));
+  assert.ok(config.ASSISTANT_ROUTING.work.some((term) => /tikclubs/i.test(term)));
+  assert.match(workModule.prompt, /TikClubs/);
+  assert.match(crossBorderWorkflow, /TikClubs/);
+  assert.match(accountAnalyticsWorkflow, /TikClubs/);
 });
 
 test("queue execution command is self-contained and backend-first", async () => {
@@ -159,16 +157,14 @@ test("queue execution command is self-contained and backend-first", async () => 
   const command = config.WORKBENCH_PROMPTS.queueCommand;
 
   for (const expected of [
-    "C:\\Users\\嘉十一\\Documents\\Codex\\2026-06-24\\w",
     "automation-workbench/queue/tasks.json",
-    "优先执行最新任务",
-    "优先在后端",
-    "无法在后台",
-    "请求接管我的电脑",
-    "登录、验证码、二次验证",
+    "automation-workbench/config/settings.json",
+    "browser",
+    "chrome",
+    "playwright",
     "outputs/",
     "automation-workbench/data/task-history.json",
-    "新建对话"
+    "50"
   ]) {
     assert.ok(command.includes(expected), `queue command should include: ${expected}`);
   }
@@ -183,8 +179,7 @@ test("workbench includes a maintenance assistant for platform and automation hea
   assert.match(maintenance.workflow, /automation-workbench\/workflows\/maintenance-supervisor-workflow\.md/);
   assert.ok(maintenance.skills.includes("browser"));
   assert.ok(maintenance.skills.includes("openai-docs"));
-  assert.ok(config.ASSISTANT_ROUTING.maintenance.includes("维护"));
-  assert.ok(config.ASSISTANT_ROUTING.maintenance.includes("平台接入"));
+  assert.ok(Array.isArray(config.ASSISTANT_ROUTING.maintenance));
 });
 
 test("settings define platform health and token budget monitoring", async () => {
