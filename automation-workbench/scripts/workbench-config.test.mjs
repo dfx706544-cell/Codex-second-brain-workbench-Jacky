@@ -22,6 +22,34 @@ test("workbench exposes an operations center tab and view", async () => {
   assert.match(html, /queue-state\.js/);
 });
 
+test("workbench uses Shiyi second-brain branding and exposes a clean cloud copy entry", async () => {
+  const html = await readFile(new URL("../app/index.html", import.meta.url), "utf8");
+  const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
+
+  assert.match(html, /<title>十一 第二大脑自动化工作台<\/title>/);
+  assert.match(html, /<h1>十一<\/h1>/);
+  assert.match(html, /第二大脑自动化工作台/);
+  assert.match(html, /id="copyCloudWorkbenchButton"/);
+  assert.match(html, /一键复制我的工作台/);
+
+  assert.match(appSource, /copyCloudWorkbenchButton/);
+  assert.match(appSource, /CLOUD_TEMPLATE_URL/);
+  assert.match(appSource, /干净独立模板/);
+  assert.match(appSource, /不包含 Jacky 的历史记录、outputs、队列、账号权限或后台自动化/);
+});
+
+test("workbench app shell uses an eye-friendly dark theme", async () => {
+  const css = await readFile(new URL("../app/styles.css", import.meta.url), "utf8");
+
+  assert.match(css, /color-scheme:\s*dark/);
+  assert.match(css, /--bg:\s*#0b0f14/);
+  assert.match(css, /--panel:\s*#121821/);
+  assert.match(css, /--ink:\s*#edf2f7/);
+  assert.doesNotMatch(css, /color-scheme:\s*light/);
+  assert.match(css, /body\s*{[\s\S]*background:\s*var\(--bg\)/);
+  assert.match(css, /\.topbar\s*{[\s\S]*background:\s*#0f151d/);
+});
+
 test("workbench bridge discovery can find fallback operation-center ports", async () => {
   const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
 
@@ -41,10 +69,17 @@ test("workbench can request backend platform opening from source cards", async (
 test("desktop launcher has a shortcut-friendly cmd wrapper", async () => {
   const ps1Source = await readFile(new URL("./start-workbench-desktop.ps1", import.meta.url), "utf8");
   const cmdSource = await readFile(new URL("./start-workbench-desktop.cmd", import.meta.url), "utf8");
+  const shortcutSource = await readFile(new URL("./install-desktop-shortcut.ps1", import.meta.url), "utf8");
 
   assert.match(ps1Source, /\[switch\]\$NoBrowser/);
+  assert.doesNotMatch(ps1Source, /--new-window/);
+  assert.match(ps1Source, /Start-Process -FilePath \$QuarkCandidates\[0\] -ArgumentList @\(\$AppUrl\)/);
   assert.match(cmdSource, /start-workbench-desktop\.ps1/);
   assert.match(cmdSource, /powershell\.exe/);
+  assert.match(shortcutSource, /Codex自动化工作台\.lnk/);
+  assert.match(shortcutSource, /start-workbench-desktop\.ps1/);
+  assert.match(shortcutSource, /powershell\.exe/);
+  assert.match(shortcutSource, /WorkingDirectory/);
 });
 
 test("workbench includes second-brain v4 assistant modules", async () => {

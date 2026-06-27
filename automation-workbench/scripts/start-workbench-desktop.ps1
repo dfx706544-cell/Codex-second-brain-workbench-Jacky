@@ -30,7 +30,7 @@ $QuarkCandidates = @(
 ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
 
 if ($QuarkCandidates.Count -gt 0) {
-  Start-Process -FilePath $QuarkCandidates[0] -ArgumentList @("--new-window", $AppUrl)
+  Start-Process -FilePath $QuarkCandidates[0] -ArgumentList @($AppUrl)
 } else {
   Start-Process $AppUrl
 }
