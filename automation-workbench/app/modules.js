@@ -120,6 +120,16 @@ window.WORKBENCH_MODULES = [
     prompt: "从已确认的任务和用户表达中提取偏好、目标、约束和工作方式，更新个人画像；敏感信息不写入公开报告，用户可查看、修改和删除。"
   },
   {
+    id: "maintenance",
+    title: "维护助手",
+    shortTitle: "Ops",
+    tag: "平台接入 / 队列 / 云端 / 费用",
+    description: "负责巡检工作台、Codex 协同、平台真实接入、云端任务、助手可用性、API 费用阈值和自我迭代风险。",
+    skills: ["browser", "chrome", "playwright", "openai-docs", "documents", "spreadsheets"],
+    workflow: "automation-workbench/workflows/maintenance-supervisor-workflow.md",
+    prompt: "检查队列桥接、运行中心、平台链接、授权状态、outputs/ 写入、知识库更新、Codex 自动化、云端同步、公开模板隐私边界、可用 skills/plugins 和 API 费用阈值；输出问题清单、修复动作、需要用户确认的事项和下一次巡检建议。"
+  },
+  {
     id: "skills",
     title: "Skill Scout",
     shortTitle: "Skills",
@@ -152,18 +162,18 @@ window.WORKBENCH_SOURCES = [
 ];
 
 window.WORKBENCH_SKILLS = [
-  { id: "browser", name: "browser", defaultModules: ["work", "creator", "skills", "inbox", "delivery", "analytics"] },
-  { id: "chrome", name: "chrome", defaultModules: ["work", "creator", "inbox", "delivery", "analytics"] },
+  { id: "browser", name: "browser", defaultModules: ["work", "creator", "skills", "inbox", "delivery", "analytics", "maintenance"] },
+  { id: "chrome", name: "chrome", defaultModules: ["work", "creator", "inbox", "delivery", "analytics", "maintenance"] },
   { id: "computer-use", name: "computer-use", defaultModules: ["creator", "inbox", "delivery"] },
-  { id: "playwright", name: "playwright", defaultModules: ["work", "inbox", "analytics", "creator"] },
+  { id: "playwright", name: "playwright", defaultModules: ["work", "inbox", "analytics", "creator", "maintenance"] },
   { id: "playwright-interactive", name: "playwright-interactive", defaultModules: ["work", "creator", "skills"] },
-  { id: "anysearch", name: "anysearch", defaultModules: ["news", "trading", "work", "skills", "creator", "growth", "health"] },
-  { id: "openai-docs", name: "openai-docs", defaultModules: ["skills"] },
-  { id: "documents", name: "documents", defaultModules: ["office", "inbox", "delivery", "analytics", "growth", "health", "profile"] },
+  { id: "anysearch", name: "anysearch", defaultModules: ["news", "trading", "work", "skills", "creator", "growth", "health", "maintenance"] },
+  { id: "openai-docs", name: "openai-docs", defaultModules: ["skills", "maintenance"] },
+  { id: "documents", name: "documents", defaultModules: ["office", "inbox", "delivery", "analytics", "growth", "health", "profile", "maintenance"] },
   { id: "docx-win", name: "docx-win", defaultModules: ["office"] },
   { id: "presentations", name: "presentations", defaultModules: ["office", "delivery"] },
   { id: "pptx-win", name: "pptx-win", defaultModules: ["office"] },
-  { id: "spreadsheets", name: "spreadsheets", defaultModules: ["office", "work", "delivery", "analytics", "creator", "growth", "health", "profile"] },
+  { id: "spreadsheets", name: "spreadsheets", defaultModules: ["office", "work", "delivery", "analytics", "creator", "growth", "health", "profile", "maintenance"] },
   { id: "xlsx-win", name: "xlsx-win", defaultModules: ["office", "analytics"] },
   { id: "template-creator", name: "template-creator", defaultModules: ["office"] },
   { id: "office-pdf", name: "office-pdf", defaultModules: ["office", "delivery", "news"] },
@@ -179,7 +189,7 @@ window.WORKBENCH_SKILLS = [
 ];
 
 window.WORKBENCH_DELIVERY = [
-  { id: "outputs", name: "保存到 outputs/", defaultModules: ["office", "news", "trading", "work", "delivery", "analytics", "creator", "growth", "health", "profile"] },
+  { id: "outputs", name: "保存到 outputs/", defaultModules: ["office", "news", "trading", "work", "delivery", "analytics", "creator", "growth", "health", "profile", "maintenance"] },
   { id: "email_draft", name: "生成邮件草稿", defaultModules: ["delivery", "news", "inbox"] },
   { id: "email_send_confirm", name: "邮件发送前确认", defaultModules: ["delivery", "news"] },
   { id: "social_draft", name: "生成社交回复草稿", defaultModules: ["inbox", "work"] },
@@ -199,11 +209,27 @@ window.ASSISTANT_ROUTING = {
   growth: ["成长", "心理学", "逻辑", "认知", "财商", "经济学", "金融学", "社交", "公关", "书单", "学习"],
   health: ["健康", "训练", "饮食", "作息", "睡眠", "身材", "减脂", "增肌", "体态", "长高"],
   profile: ["个人画像", "偏好", "目标", "了解我", "第二大脑", "长期记忆", "个人助手"],
+  maintenance: ["维护", "巡检", "运行中心", "平台接入", "真实接入", "链接", "云端稳定", "桥接", "队列", "执行口令", "token", "余额", "费用", "充值", "API", "跑不通", "可用性", "健康检查", "系统监管"],
   skills: ["skill", "skills", "插件", "github", "安装", "自动进化", "自我进化", "扩展能力", "下载", "自主执行", "真正自动化", "关机后运行"]
 };
 
 window.WORKBENCH_PROMPTS = {
-  queueCommand: "请打开我们制作的自动化工作台，处理里面的执行队列；优先执行最新任务，按任务要求使用对应 skill、平台、交付方式和 workflow，最终把结果保存到 outputs/ 并用中文说明。",
+  queueCommand: `请打开我们制作的第二大脑自动化工作台并处理执行队列。
+
+工作区路径：C:\\Users\\嘉十一\\Documents\\Codex\\2026-06-24\\w
+请先读取：automation-workbench/queue/tasks.json、automation-workbench/config/settings.json、automation-workbench/workflows/、workflows/、inputs/、templates/。
+如果我把这条执行口令复制到新建对话，只要新对话仍然能访问同一个工作区和 Codex 工具，也请按上述路径准确执行；如果新建对话无法访问该工作区，请先提醒我切换到这个项目或补充队列内容。
+
+执行顺序：
+1. 优先执行最新任务；如果队列为空，明确说明没有可执行任务。
+2. 按任务要求使用对应 skill、平台、交付方式和 workflow，必要时调用 Office、资讯、金融、电商、信息、交付、自媒体/IP、个人成长、健康、个人画像、维护助手或 Skill Scout。
+3. 涉及平台、网站或账号后台时，优先在后端使用 browser、chrome、playwright、AnySearch、API、导出文件或已经授权的可见页面执行；优先在后端打开我已经授权且在工作台里显示的平台。
+4. 如果无法在后台完成，或者必须依赖桌面应用、夸克浏览器、剪映、微信、飞书、邮箱、验证码页面、文件选择器等前台界面，请请求接管我的电脑，在前台打开对应平台；需要我登录、验证码、二次验证、支付密码、交易密码或人工确认时立刻停下让我操作，不要读取、保存或绕过密码。
+5. 金融相关只做资讯、信号提醒、纸面交易、风险清单、持仓监控建议和人工确认前检查，不执行真实下单、支付或交易。
+6. 邮件、微信、飞书、社交私信、上传、发布、提交、安装第三方 skill/plugin/software 等外部动作，先生成草稿、候选清单和确认清单；真正外发或安装前等待我当次确认。
+7. 如果涉及 API 费用或 token 余额，请检查是否已配置真实账单/余额来源；当可核实余额低于 50 元人民币时提醒我充值。无法读取真实余额时，标注“余额监控未配置/待授权”，不要编造金额。
+8. 最终把结果、报表、草稿、来源链接和任务记录保存到 outputs/，并尽量更新 automation-workbench/data/task-history.json、daily-briefs.json、business-feedback.json 或 knowledge-items.json。
+9. 最后用简洁中文说明完成了什么、文件在哪里、来源链接有哪些、哪些动作等待我确认、哪些平台或权限还需要补齐。`,
   inbox: `请启动信息助手。
 目标：整理飞书、微信、邮箱和社交平台中用户指定范围内的可见消息。
 要求：

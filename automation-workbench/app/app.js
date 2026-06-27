@@ -155,7 +155,7 @@ function bridgeCandidates() {
   if (window.location.protocol === "http:" || window.location.protocol === "https:") {
     candidates.push(window.location.origin);
   }
-  for (let port = 8787; port <= 8796; port += 1) {
+  for (let port = 8787; port <= 8806; port += 1) {
     candidates.push(`http://127.0.0.1:${port}`);
   }
   return Array.from(new Set(candidates));
@@ -209,7 +209,7 @@ async function findBridge() {
       const response = await fetch(`${candidate}/api/health`, { cache: "no-store" });
       if (!response.ok) continue;
       const health = await response.json();
-      if (health?.capabilities?.dataHub && health?.capabilities?.operationsCenter) return candidate;
+      if (health?.capabilities?.dataHub && health?.capabilities?.operationsCenter && health?.capabilities?.platformOpener) return candidate;
     } catch {
       // Try the next local bridge candidate.
     }
@@ -586,6 +586,31 @@ function selectedDeliveryNames(ids) {
   return ids.map((id) => window.WORKBENCH_DELIVERY.find((item) => item.id === id)?.name || id);
 }
 
+async function openWorkbenchSource(sourceId) {
+  const source = window.WORKBENCH_SOURCES.find((item) => item.id === sourceId);
+  if (!source?.url) {
+    showToast("这个平台还没有配置 URL");
+    return;
+  }
+
+  if (bridgeConnected && !isCloudShareMode()) {
+    try {
+      const response = await fetch(`${bridgeBaseUrl}/api/platforms/open`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: sourceId })
+      });
+      if (!response.ok) throw new Error(`Platform open failed: ${response.status}`);
+      showToast(`已打开：${source.name}`);
+      return;
+    } catch {
+      showToast("后端打开失败，改用浏览器打开链接");
+    }
+  }
+
+  window.open(source.url, "_blank", "noopener");
+}
+
 function buildTaskObject() {
   const userText = userInput.value.trim();
   if (!userText) return null;
@@ -670,12 +695,15 @@ ${workflowText}
 1. 先理解需求并判断是否需要读取 inputs/、templates/、automation-workbench/config/、automation-workbench/workflows/ 或 workflows/。
 2. 如果涉及实时信息，优先使用 AnySearch 或可用网页搜索，覆盖中国大陆和海外来源，并保留真实可查询的网址。
 3. 不管来源是中文还是英文，最终解读必须使用通俗易懂的中文。
-4. 如果涉及 Office 文件，生成或编辑 Word、PPT、Excel，并把最终文件保存到 outputs/。
-5. 如果涉及飞书、微信、邮箱、社交私信或客户沟通，只能先读取用户授权页面中的可见内容并生成回复草稿；真正发送、提交、上传或外发前必须等待用户确认。
-6. 如果涉及账号作品数据、达人沟通数据或转化数据，只读取用户已登录且授权可见的页面，或读取 inputs/ 中用户导出的文件；无法读取时列出需要用户导出的字段。
-7. 如果涉及金融交易，只做资讯、信号提醒、纸面交易、风险清单和人工确认前检查，不执行真实下单。
-8. 如果涉及 Skill 安装，先评估候选和风险；即使用户开放权限，也必须针对具体候选等待确认后再安装。
-9. 最后用简洁中文说明完成了什么、文件在哪里、来源链接有哪些、哪些草稿等待发送确认、还有哪些需要用户补充。
+4. 涉及平台、网站或账号后台时，优先在后端使用 browser、chrome、playwright、AnySearch、API、导出文件或已授权可见页面执行；如果无法在后台完成，再请求接管我的电脑并在前台打开对应平台。
+5. 需要我登录、验证码、二次验证、支付密码、交易密码或人工确认时，立刻停下让我操作；不要读取、保存或绕过密码。
+6. 如果涉及 Office 文件，生成或编辑 Word、PPT、Excel，并把最终文件保存到 outputs/。
+7. 如果涉及飞书、微信、邮箱、社交私信或客户沟通，只能先读取用户授权页面中的可见内容并生成回复草稿；真正发送、提交、上传或外发前必须等待用户确认。
+8. 如果涉及账号作品数据、达人沟通数据或转化数据，只读取用户已登录且授权可见的页面，或读取 inputs/ 中用户导出的文件；无法读取时列出需要用户导出的字段。
+9. 如果涉及金融交易，只做资讯、信号提醒、纸面交易、风险清单和人工确认前检查，不执行真实下单。
+10. 如果涉及 API 费用或 token 余额，请检查是否已配置真实账单/余额来源；当可核实余额低于 50 元人民币时提醒充值。无法读取真实余额时标注待授权，不要编造金额。
+11. 如果涉及 Skill 安装，先评估候选和风险；即使用户开放权限，也必须针对具体候选等待确认后再安装。
+12. 最后用简洁中文说明完成了什么、文件在哪里、来源链接有哪些、哪些草稿等待发送确认、还有哪些需要用户补充。
 
 建议任务拆解：
 1. ${task.primary.title}：${task.primary.prompt}
@@ -691,13 +719,16 @@ function renderAssistants() {
 function renderSources() {
   sourceGrid.innerHTML = window.WORKBENCH_SOURCES
     .map((source) => `
-      <label class="check-card" title="${source.note}">
-        <input type="checkbox" value="${source.id}">
-        <span>
-          <strong>${source.name}</strong>
-          <small>${source.group}</small>
-        </span>
-      </label>
+      <div class="check-card source-card" title="${source.note}">
+        <label>
+          <input type="checkbox" value="${source.id}">
+          <span>
+            <strong>${source.name}</strong>
+            <small>${source.group}</small>
+          </span>
+        </label>
+        <button class="small ghost" data-open-source="${source.id}" type="button">打开</button>
+      </div>
     `)
     .join("");
 }
@@ -913,6 +944,13 @@ queueList.addEventListener("click", async (event) => {
     await loadOperationsStatus();
     showToast("任务已删除");
   }
+});
+
+sourceGrid.addEventListener("click", async (event) => {
+  const sourceId = event.target.getAttribute("data-open-source");
+  if (!sourceId) return;
+  event.preventDefault();
+  await openWorkbenchSource(sourceId);
 });
 
 moduleGrid.addEventListener("click", async (event) => {

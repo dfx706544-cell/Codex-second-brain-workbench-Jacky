@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { checkApiBudget } from "./api-budget-monitor.mjs";
 
+const MOJIBAKE_PATTERN = /鏈|閭|绋|俙|€|�/;
+
 test("Micu API budget monitor stays unverified when no source is configured", async () => {
   const result = await checkApiBudget({
     env: {}
@@ -11,6 +13,7 @@ test("Micu API budget monitor stays unverified when no source is configured", as
   assert.equal(result.status, "not_configured");
   assert.equal(result.verified, false);
   assert.match(result.message, /余额监控未配置\/待授权/);
+  assert.doesNotMatch(result.message, MOJIBAKE_PATTERN);
 });
 
 test("Micu API budget monitor flags direct verified balance below threshold", async () => {
@@ -24,6 +27,7 @@ test("Micu API budget monitor flags direct verified balance below threshold", as
   assert.equal(result.verified, true);
   assert.equal(result.remainingCny, 49.99);
   assert.match(result.message, /请尽快充值/);
+  assert.doesNotMatch(result.message, MOJIBAKE_PATTERN);
 });
 
 test("Micu API budget monitor reads balance from configured JSON path", async () => {
@@ -43,4 +47,5 @@ test("Micu API budget monitor reads balance from configured JSON path", async ()
   assert.equal(result.verified, true);
   assert.equal(result.remainingCny, 88.8);
   assert.match(result.sources[0], /data\.remaining_cny/);
+  assert.match(result.message, /高于 50 元人民币提醒线/);
 });

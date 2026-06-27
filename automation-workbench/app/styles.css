@@ -312,6 +312,24 @@ select:focus {
   font-weight: 400;
 }
 
+.source-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.source-card label {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  font-weight: 400;
+}
+
+.source-card button {
+  align-self: center;
+  white-space: nowrap;
+}
+
 .check-card input,
 .chip input {
   width: 16px;
@@ -766,6 +784,10 @@ code {
 
   .source-grid,
   .module-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .source-card {
     grid-template-columns: 1fr;
   }
 

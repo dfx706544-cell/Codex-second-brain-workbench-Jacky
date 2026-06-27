@@ -6,7 +6,7 @@
 
 - 本地工作台已完成：`automation-workbench/`
 - 本地 Codex 自动化已完成：每日 8 点、每周自我迭代审计
-- 当前缺口：本工作区还没有绑定 GitHub 远程仓库，也没有已接入的远程/云端项目
+- 当前状态：本工作区已绑定 GitHub 远程仓库；下一步是配置云端 Secrets/Variables，并验证每日/每周任务能在云端成功运行
 
 ## 推荐路线
 
@@ -24,9 +24,9 @@
 
 1. 打开 `https://chatgpt.com/codex`
 2. 连接 GitHub 账号
-3. 创建一个私有仓库，例如 `second-brain-workbench`
-4. 把当前工作区推送到这个私有仓库
-5. 在 Codex Cloud 里选择这个仓库并配置环境
+3. 使用已绑定的私有仓库 `dfx706544-cell/Codex-second-brain-workbench-Jacky`
+4. 把本地自动化脚本和工作流推送到该仓库
+5. 在 Codex Cloud 或 GitHub Actions 里配置 Secrets/Variables 并运行每日/每周任务
 
 ### 第二阶段：远程 SSH / VPS / NAS
 

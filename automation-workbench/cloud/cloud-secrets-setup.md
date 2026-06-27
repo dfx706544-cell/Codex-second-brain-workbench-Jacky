@@ -1,6 +1,6 @@
 # 第二大脑 v4 云端密钥配置
 
-目标：让电脑关机后，GitHub Actions / Codex Cloud 也能每天 8 点生成信息简报、业务反馈、维护报告，并在配置完成后发送到 `jacky060911@163.com`。
+目标：让电脑关机后，GitHub Actions / Codex Cloud 也能每天 8 点生成信息简报、业务反馈、维护报告，并在配置完成后发送到 `jacky060911@163.com` 和 `liu13922830178@outlook.com`。
 
 ## 先记住边界
 
@@ -77,7 +77,7 @@ https://github.com/dfx706544-cell/Codex-second-brain-workbench-Jacky/settings/se
 | `SMTP_USER` | `jacky060911@163.com` |
 | `SMTP_PASS` | 163 邮箱的 SMTP 授权码，不是邮箱登录密码 |
 | `MAIL_FROM` | `jacky060911@163.com` |
-| `MAIL_TO` | `jacky060911@163.com` |
+| `MAIL_TO` | `jacky060911@163.com,liu13922830178@outlook.com` |
 
 在 GitHub Variables 里添加：
 

@@ -129,6 +129,16 @@ const PUBLIC_MODULES = [
     prompt: "从用户确认的信息中提取偏好、目标、约束和工作方式，更新用户自己的个人画像；用户可查看、修改和删除。"
   },
   {
+    id: "maintenance",
+    title: "维护助手",
+    shortTitle: "Ops",
+    tag: "平台接入 / 队列 / 云端 / 费用",
+    description: "巡检工作台、Codex 协同、平台真实接入、自动化、云端同步、API 费用阈值和隐私边界。",
+    skills: ["browser", "chrome", "playwright", "openai-docs", "documents", "spreadsheets"],
+    workflow: "automation-workbench/workflows/maintenance-supervisor-workflow.md",
+    prompt: "检查队列桥接、运行中心、平台链接、授权状态、输出目录写入、知识库更新、Codex 自动化、云端同步、公开模板隐私边界、可用 skills/plugins 和 API 费用阈值；输出问题清单、修复动作和待确认事项。"
+  },
+  {
     id: "skills",
     title: "Skill Scout",
     shortTitle: "Skills",
@@ -152,14 +162,14 @@ const PUBLIC_SOURCES = [
 ];
 
 const PUBLIC_SKILLS = [
-  { id: "browser", name: "browser", defaultModules: ["work", "creator", "skills", "inbox", "delivery", "analytics"] },
-  { id: "chrome", name: "chrome", defaultModules: ["work", "creator", "inbox", "delivery", "analytics"] },
+  { id: "browser", name: "browser", defaultModules: ["work", "creator", "skills", "inbox", "delivery", "analytics", "maintenance"] },
+  { id: "chrome", name: "chrome", defaultModules: ["work", "creator", "inbox", "delivery", "analytics", "maintenance"] },
   { id: "computer-use", name: "computer-use", defaultModules: ["creator", "inbox", "delivery"] },
-  { id: "playwright", name: "playwright", defaultModules: ["work", "inbox", "analytics", "creator"] },
-  { id: "anysearch", name: "anysearch", defaultModules: ["news", "trading", "work", "skills", "creator", "growth", "health"] },
-  { id: "documents", name: "documents", defaultModules: ["office", "inbox", "delivery", "analytics", "growth", "health", "profile"] },
+  { id: "playwright", name: "playwright", defaultModules: ["work", "inbox", "analytics", "creator", "maintenance"] },
+  { id: "anysearch", name: "anysearch", defaultModules: ["news", "trading", "work", "skills", "creator", "growth", "health", "maintenance"] },
+  { id: "documents", name: "documents", defaultModules: ["office", "inbox", "delivery", "analytics", "growth", "health", "profile", "maintenance"] },
   { id: "presentations", name: "presentations", defaultModules: ["office", "delivery"] },
-  { id: "spreadsheets", name: "spreadsheets", defaultModules: ["office", "work", "delivery", "analytics", "creator", "growth", "health", "profile"] },
+  { id: "spreadsheets", name: "spreadsheets", defaultModules: ["office", "work", "delivery", "analytics", "creator", "growth", "health", "profile", "maintenance"] },
   { id: "email-draft-polish", name: "email-draft-polish", defaultModules: ["inbox", "delivery"] },
   { id: "skill-installer", name: "skill-installer", defaultModules: ["skills"] },
   { id: "skill-creator", name: "skill-creator", defaultModules: ["skills"] },
@@ -167,7 +177,7 @@ const PUBLIC_SKILLS = [
 ];
 
 const PUBLIC_DELIVERY = [
-  { id: "local_outputs", name: "保存到你自己的输出目录", defaultModules: ["office", "news", "trading", "work", "delivery", "analytics", "creator", "growth", "health", "profile"] },
+  { id: "local_outputs", name: "保存到你自己的输出目录", defaultModules: ["office", "news", "trading", "work", "delivery", "analytics", "creator", "growth", "health", "profile", "maintenance"] },
   { id: "email_draft", name: "生成邮件草稿", defaultModules: ["delivery", "news", "inbox"] },
   { id: "email_send_confirm", name: "邮件发送前确认", defaultModules: ["delivery", "news"] },
   { id: "social_draft", name: "生成社交回复草稿", defaultModules: ["inbox", "work"] },
@@ -187,11 +197,26 @@ const PUBLIC_ROUTING = {
   growth: ["成长", "心理学", "逻辑", "认知", "财商", "经济学", "金融学", "社交", "公关", "书单", "学习"],
   health: ["健康", "训练", "饮食", "作息", "睡眠", "身材", "减脂", "增肌", "体态"],
   profile: ["个人画像", "偏好", "目标", "了解我", "第二大脑", "长期记忆", "个人助手"],
+  maintenance: ["维护", "巡检", "运行中心", "平台接入", "真实接入", "链接", "云端稳定", "桥接", "队列", "执行口令", "token", "余额", "费用", "充值", "API", "可用性", "健康检查"],
   skills: ["skill", "skills", "插件", "github", "安装", "自我进化", "扩展能力", "下载", "自动化"]
 };
 
 const PUBLIC_PROMPTS = {
-  queueCommand: "请打开我的自动化工作台，处理执行队列；优先执行最新任务，按任务要求使用对应 skill、平台、交付方式和 workflow，最终把结果保存到我自己的输出目录，并用中文说明。",
+  queueCommand: `请打开我的自动化工作台并处理执行队列。
+
+请先读取当前项目中的 automation-workbench/queue/tasks.json、automation-workbench/config/settings.json、automation-workbench/workflows/、workflows/、inputs/、templates/。
+如果我把这条执行口令复制到新建对话，只要新对话仍然能访问同一个项目和 Codex 工具，也请按当前项目路径准确执行；如果无法访问，请提醒我切换到对应项目或补充队列内容。
+
+执行要求：
+1. 优先执行最新任务；如果队列为空，明确说明没有可执行任务。
+2. 按任务要求使用对应 skill、平台、交付方式和 workflow。
+3. 涉及平台、网站或账号后台时，优先在后端使用 browser、chrome、playwright、实时搜索、API、导出文件或已授权可见页面执行。
+4. 如果无法在后台完成，或者必须依赖桌面应用、浏览器登录、验证码页面、文件选择器等前台界面，请请求接管我的电脑，在前台打开对应平台；需要我登录、验证码、二次验证、支付密码、交易密码或人工确认时立刻停下让我操作。
+5. 金融相关只做资讯、提醒、纸面交易、风险清单和人工确认前检查，不执行真实下单、支付或交易。
+6. 邮件、社交私信、上传、发布、提交、安装第三方 skill/plugin/software 等外部动作，先生成草稿或确认清单；真正外发或安装前等待我确认。
+7. 如果涉及 API 费用或 token 余额，请检查是否已配置真实账单/余额来源；当可核实余额低于 50 元人民币时提醒充值。无法读取真实余额时标注“余额监控未配置/待授权”。
+8. 最终把结果、报表、草稿、来源链接和任务记录保存到我自己的输出目录，并尽量更新工作台数据记录。
+9. 最后用简洁中文说明完成了什么、文件在哪里、来源链接有哪些、哪些动作等待我确认、哪些平台或权限还需要补齐。`,
   inbox: `请启动信息助手。
 目标：整理我授权平台中指定范围内的可见消息。
 要求：
@@ -237,6 +262,13 @@ const PUBLIC_PROMPTS = {
 2. 邮件发送、社交消息发送、上传、提交、发布、安装、真实交易、支付或下单必须等待我确认。
 3. 电脑关机后仍需运行的任务，必须放到云端或自动化服务，不承诺本地工作台能在关机后继续运行。
 4. 结果尽量写入我自己的输出目录和数据目录，并保留来源链接、时间戳和下一步动作。`,
+  maintenance: `请启动维护助手。
+目标：检查我的工作台、Codex 协同、平台接入、队列、自动化、云端同步、输出目录、知识库、历史记录、skills/plugins 和 API 费用提醒是否稳定可用。
+要求：
+1. 优先后台检查平台 URL、队列、配置、输出目录和工作流；必须前台登录或验证码时停下让我操作。
+2. 对每个平台记录：是否可打开、是否需要登录、是否已授权可读、是否待配置、证据链接或路径。
+3. API/token 费用只有在配置真实账单或余额来源后才判断；低于 50 元人民币时提醒充值；无法核实时标注待授权。
+4. 输出维护报告、问题清单、可自动修复项和待我确认项。`,
   skillScout: `请启动 Skill Scout。
 目标：搜索 GitHub 或官方技能仓库，找出可能提升 Office、搜索、业务、金融资讯、社交交付、邮件、剪辑和自动化能力的 Codex skills 或插件。
 要求：

@@ -1,14 +1,17 @@
 import { createServer } from "node:http";
+import { spawn } from "node:child_process";
 import { createReadStream } from "node:fs";
 import { access, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import vm from "node:vm";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_WORKBENCH_ROOT = path.dirname(SCRIPT_DIR);
 const DEFAULT_WORKSPACE_ROOT = path.dirname(DEFAULT_WORKBENCH_ROOT);
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8787;
+const DEFAULT_PORT_FALLBACK_ATTEMPTS = 20;
 
 const MIME_TYPES = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -139,6 +142,73 @@ function parseJsonFile(raw, fallback) {
   return normalized ? JSON.parse(normalized) : fallback;
 }
 
+function slugifyPlatformId(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "platform";
+}
+
+function normalizePlatform(platform, source = "settings") {
+  if (!platform || !platform.name || !platform.url) return null;
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(platform.url);
+  } catch {
+    return null;
+  }
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) return null;
+
+  return {
+    id: platform.id || slugifyPlatformId(platform.name),
+    name: platform.name,
+    group: platform.group || source,
+    url: parsedUrl.href,
+    enabled: platform.enabled !== false,
+    purpose: platform.purpose || platform.note || "",
+    source
+  };
+}
+
+async function defaultOpenExternal(targetUrl) {
+  let command;
+  let args;
+
+  if (process.platform === "win32") {
+    const quarkCandidates = [
+      process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Programs", "Quark", "quark.exe"),
+      process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Quark", "quark.exe"),
+      process.env.ProgramFiles && path.join(process.env.ProgramFiles, "Quark", "quark.exe"),
+      process.env["ProgramFiles(x86)"] && path.join(process.env["ProgramFiles(x86)"], "Quark", "quark.exe")
+    ].filter(Boolean);
+    const quark = (await Promise.all(quarkCandidates.map(async (candidate) => (
+      (await fileExists(candidate)) ? candidate : ""
+    )))).find(Boolean);
+
+    if (quark) {
+      command = quark;
+      args = ["--new-window", targetUrl];
+    } else {
+      command = "rundll32.exe";
+      args = ["url.dll,FileProtocolHandler", targetUrl];
+    }
+  } else if (process.platform === "darwin") {
+    command = "open";
+    args = [targetUrl];
+  } else {
+    command = "xdg-open";
+    args = [targetUrl];
+  }
+
+  const child = spawn(command, args, {
+    detached: true,
+    stdio: "ignore",
+    windowsHide: true
+  });
+  child.unref();
+}
+
 async function listen(server, host, port) {
   return await new Promise((resolve, reject) => {
     const cleanup = () => {
@@ -169,6 +239,7 @@ function createWorkbenchBridge(options = {}) {
   const host = options.host || DEFAULT_HOST;
   const requestedPort = Number(options.port ?? DEFAULT_PORT);
   const allowPortFallback = options.allowPortFallback !== false;
+  const openExternal = options.openExternal || defaultOpenExternal;
   let server;
 
   async function ensureQueueFile() {
@@ -234,6 +305,51 @@ function createWorkbenchBridge(options = {}) {
     }
     const raw = await readFile(filePath, "utf8");
     return parseJsonFile(raw, name === "personal-profile" ? {} : []);
+  }
+
+  async function readConfiguredPlatforms() {
+    const platforms = new Map();
+    const settingsPath = path.join(workbenchRoot, "config", "settings.json");
+    if (await fileExists(settingsPath)) {
+      const settings = parseJsonFile(await readFile(settingsPath, "utf8"), {});
+      for (const platform of settings?.workAssistant?.platforms || []) {
+        const normalized = normalizePlatform(platform, "settings");
+        if (normalized && !platforms.has(normalized.id)) {
+          platforms.set(normalized.id, normalized);
+        }
+      }
+    }
+
+    const modulesPath = path.join(workbenchRoot, "app", "modules.js");
+    if (await fileExists(modulesPath)) {
+      const sandbox = { window: {} };
+      vm.runInNewContext(await readFile(modulesPath, "utf8"), sandbox, { filename: "modules.js" });
+      for (const platform of sandbox.window.WORKBENCH_SOURCES || []) {
+        const normalized = normalizePlatform(platform, "workbench");
+        if (normalized && !platforms.has(normalized.id)) {
+          platforms.set(normalized.id, normalized);
+        }
+      }
+    }
+
+    return Array.from(platforms.values());
+  }
+
+  async function openConfiguredPlatform(id) {
+    const platforms = await readConfiguredPlatforms();
+    const platform = platforms.find((item) => item.id === id);
+    if (!platform) {
+      const error = new Error("Unknown platform.");
+      error.statusCode = 404;
+      throw error;
+    }
+    if (!platform.enabled) {
+      const error = new Error("Platform is disabled.");
+      error.statusCode = 409;
+      throw error;
+    }
+    await openExternal(platform.url);
+    return platform;
   }
 
   async function writeDataStore(name, value) {
@@ -419,7 +535,8 @@ function createWorkbenchBridge(options = {}) {
         capabilities: {
           dataHub: true,
           operationsCenter: true,
-          sharedQueue: true
+          sharedQueue: true,
+          platformOpener: true
         },
         queuePath,
         workbenchRoot
@@ -429,6 +546,24 @@ function createWorkbenchBridge(options = {}) {
 
     if (url.pathname === "/api/status" && req.method === "GET") {
       jsonResponse(res, 200, await buildOperationsStatus());
+      return;
+    }
+
+    if (url.pathname === "/api/platforms" && req.method === "GET") {
+      jsonResponse(res, 200, { platforms: await readConfiguredPlatforms() });
+      return;
+    }
+
+    if (url.pathname === "/api/platforms/open" && req.method === "POST") {
+      const body = await readRequestBody(req);
+      const payload = body.trim() ? JSON.parse(body) : {};
+      const platform = await openConfiguredPlatform(payload.id);
+      jsonResponse(res, 200, {
+        ok: true,
+        id: platform.id,
+        name: platform.name,
+        url: platform.url
+      });
       return;
     }
 
@@ -554,7 +689,7 @@ function createWorkbenchBridge(options = {}) {
 
     await ensureQueueFile();
     let lastError;
-    const maxAttempts = allowPortFallback && requestedPort !== 0 ? 10 : 1;
+    const maxAttempts = allowPortFallback && requestedPort !== 0 ? DEFAULT_PORT_FALLBACK_ATTEMPTS : 1;
 
     for (let offset = 0; offset < maxAttempts; offset += 1) {
       const port = requestedPort === 0 ? 0 : requestedPort + offset;

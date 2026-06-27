@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKSPACE_ROOT = path.dirname(path.dirname(SCRIPT_DIR));
+const MOJIBAKE_PATTERN = /鏈|閭|绋|俙|€|�/;
 
 function safeTestEnv(overrides = {}) {
   return {
@@ -54,6 +55,12 @@ async function readLatestMaintenanceReport(fixture) {
   return readFile(path.join(fixture.tmpRoot, maintenancePath), "utf8");
 }
 
+async function readLatestDailyBrief(fixture) {
+  const dailyBriefs = JSON.parse(await readFile(path.join(fixture.dataDir, "daily-briefs.json"), "utf8"));
+  const dailyPath = dailyBriefs[0].outputs.find((item) => item.startsWith("outputs/daily-brief-"));
+  return readFile(path.join(fixture.tmpRoot, dailyPath), "utf8");
+}
+
 test("daily cloud runner writes workbench-readable outputs and data", async () => {
   const fixture = await copyRunnerFixture();
 
@@ -77,16 +84,22 @@ test("daily cloud runner writes workbench-readable outputs and data", async () =
 
     assert.equal(dailyBriefs.length, 1);
     assert.equal(businessFeedback.length, 1);
-    assert.equal(knowledgeItems.length, 1);
+    assert.equal(knowledgeItems.length, 2);
     assert.equal(taskHistory.length, 1);
     assert.ok(dailyBriefs[0].outputs.some((item) => item.startsWith("outputs/daily-brief-")));
     assert.ok(taskHistory[0].outputs.some((item) => item.startsWith("outputs/maintenance-report-")));
+
+    const dailyBrief = await readLatestDailyBrief(fixture);
+    assert.match(dailyBrief, /第二大脑 v4 每日信息简报/);
+    assert.match(dailyBrief, /美股/);
+    assert.doesNotMatch(dailyBrief, MOJIBAKE_PATTERN);
 
     const maintenanceReport = await readLatestMaintenanceReport(fixture);
     assert.match(maintenanceReport, /API\/token/);
     assert.match(maintenanceReport, /余额监控未配置\/待授权/);
     assert.match(maintenanceReport, /50 元人民币/);
-    assert.match(maintenanceReport, /平台接入/);
+    assert.match(maintenanceReport, /平台真实接入/);
+    assert.doesNotMatch(maintenanceReport, MOJIBAKE_PATTERN);
   } finally {
     await rm(fixture.tmpRoot, { recursive: true, force: true });
   }
@@ -141,6 +154,31 @@ test("daily cloud runner records email delivery as draft-only when SMTP is not c
   }
 });
 
+test("daily cloud runner targets both fallback email recipients", async () => {
+  const fixture = await copyRunnerFixture();
+
+  try {
+    const result = spawnSync(process.execPath, [
+      "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+      "daily"
+    ], {
+      cwd: fixture.tmpRoot,
+      encoding: "utf8",
+      env: safeTestEnv()
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+
+    const taskHistory = JSON.parse(await readFile(path.join(fixture.dataDir, "task-history.json"), "utf8"));
+    const emailDraftPath = taskHistory[0].outputs.find((item) => item.startsWith("outputs/email-draft-daily-brief-"));
+    const emailDraft = await readFile(path.join(fixture.tmpRoot, emailDraftPath), "utf8");
+    assert.match(emailDraft, /jacky060911@163\.com/);
+    assert.match(emailDraft, /liu13922830178@outlook\.com/);
+  } finally {
+    await rm(fixture.tmpRoot, { recursive: true, force: true });
+  }
+});
+
 test("weekly cloud runner writes an evolution audit without existing history", async () => {
   const fixture = await copyRunnerFixture();
 
@@ -160,6 +198,10 @@ test("weekly cloud runner writes an evolution audit without existing history", a
     const taskHistory = JSON.parse(await readFile(path.join(fixture.dataDir, "task-history.json"), "utf8"));
     assert.equal(taskHistory.length, 1);
     assert.match(taskHistory[0].outputs[0], /^outputs\/weekly-evolution-audit-/);
+
+    const report = await readFile(path.join(fixture.tmpRoot, taskHistory[0].outputs[0]), "utf8");
+    assert.match(report, /每周自我迭代审计/);
+    assert.doesNotMatch(report, MOJIBAKE_PATTERN);
   } finally {
     await rm(fixture.tmpRoot, { recursive: true, force: true });
   }

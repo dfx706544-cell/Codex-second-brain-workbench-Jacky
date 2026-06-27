@@ -1,8 +1,8 @@
 # 第二大脑 v4 云端就绪检查
 
-生成时间：2026-06-26T08:13:26.537Z
+生成时间：2026-06-27T05:55:09.866Z
 
-结果：12/12 通过，0 项待处理。
+结果：15/15 通过，0 项待处理。
 
 ## 检查项
 
@@ -11,7 +11,10 @@
 - [x] required file: automation-workbench/cloud/cloud-daily-brief-prompt.md：automation-workbench/cloud/cloud-daily-brief-prompt.md
 - [x] required file: automation-workbench/cloud/cloud-weekly-evolution-prompt.md：automation-workbench/cloud/cloud-weekly-evolution-prompt.md
 - [x] required file: automation-workbench/cloud/cloud-sync-policy.md：automation-workbench/cloud/cloud-sync-policy.md
+- [x] required file: automation-workbench/cloud/cloud-secrets-setup.md：automation-workbench/cloud/cloud-secrets-setup.md
 - [x] required file: automation-workbench/scripts/second-brain-cloud-runner.mjs：automation-workbench/scripts/second-brain-cloud-runner.mjs
+- [x] required file: automation-workbench/scripts/api-budget-monitor.mjs：automation-workbench/scripts/api-budget-monitor.mjs
+- [x] required file: automation-workbench/scripts/email-delivery.mjs：automation-workbench/scripts/email-delivery.mjs
 - [x] required file: .github/workflows/second-brain-daily.yml：.github/workflows/second-brain-daily.yml
 - [x] required file: .github/workflows/second-brain-weekly.yml：.github/workflows/second-brain-weekly.yml
 - [x] required file: .gitignore：.gitignore

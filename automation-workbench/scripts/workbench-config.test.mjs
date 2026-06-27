@@ -26,7 +26,25 @@ test("workbench bridge discovery can find fallback operation-center ports", asyn
   const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
 
   assert.match(appSource, /operationsCenter/);
-  assert.match(appSource, /8796/);
+  assert.match(appSource, /platformOpener/);
+  assert.match(appSource, /8806/);
+});
+
+test("workbench can request backend platform opening from source cards", async () => {
+  const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
+
+  assert.match(appSource, /function openWorkbenchSource/);
+  assert.match(appSource, /\/api\/platforms\/open/);
+  assert.match(appSource, /data-open-source/);
+});
+
+test("desktop launcher has a shortcut-friendly cmd wrapper", async () => {
+  const ps1Source = await readFile(new URL("./start-workbench-desktop.ps1", import.meta.url), "utf8");
+  const cmdSource = await readFile(new URL("./start-workbench-desktop.cmd", import.meta.url), "utf8");
+
+  assert.match(ps1Source, /\[switch\]\$NoBrowser/);
+  assert.match(cmdSource, /start-workbench-desktop\.ps1/);
+  assert.match(cmdSource, /powershell\.exe/);
 });
 
 test("workbench includes second-brain v4 assistant modules", async () => {
@@ -92,4 +110,47 @@ test("workbench exposes Dami TikClubs for ecommerce BD workflows", async () => {
   assert.match(workModule.prompt, /达秘 \/ TikClubs/);
   assert.match(crossBorderWorkflow, /达秘 \/ TikClubs/);
   assert.match(accountAnalyticsWorkflow, /达秘 \/ TikClubs/);
+});
+
+test("queue execution command is self-contained and backend-first", async () => {
+  const config = await loadWorkbenchConfig();
+  const command = config.WORKBENCH_PROMPTS.queueCommand;
+
+  for (const expected of [
+    "C:\\Users\\嘉十一\\Documents\\Codex\\2026-06-24\\w",
+    "automation-workbench/queue/tasks.json",
+    "优先执行最新任务",
+    "优先在后端",
+    "无法在后台",
+    "请求接管我的电脑",
+    "登录、验证码、二次验证",
+    "outputs/",
+    "automation-workbench/data/task-history.json",
+    "新建对话"
+  ]) {
+    assert.ok(command.includes(expected), `queue command should include: ${expected}`);
+  }
+});
+
+test("workbench includes a maintenance assistant for platform and automation health", async () => {
+  const config = await loadWorkbenchConfig();
+  const modules = new Map(config.WORKBENCH_MODULES.map((module) => [module.id, module]));
+  const maintenance = modules.get("maintenance");
+
+  assert.ok(maintenance, "maintenance assistant should exist");
+  assert.match(maintenance.workflow, /automation-workbench\/workflows\/maintenance-supervisor-workflow\.md/);
+  assert.ok(maintenance.skills.includes("browser"));
+  assert.ok(maintenance.skills.includes("openai-docs"));
+  assert.ok(config.ASSISTANT_ROUTING.maintenance.includes("维护"));
+  assert.ok(config.ASSISTANT_ROUTING.maintenance.includes("平台接入"));
+});
+
+test("settings define platform health and token budget monitoring", async () => {
+  const settings = await loadSettings();
+
+  assert.equal(settings.maintenance.platformHealth.enabled, true);
+  assert.ok(settings.maintenance.platformHealth.checks.includes("open_url"));
+  assert.equal(settings.maintenance.apiBudget.enabled, true);
+  assert.equal(settings.maintenance.apiBudget.lowBalanceThresholdCny, 50);
+  assert.equal(settings.maintenance.apiBudget.action, "notify_recharge_needed");
 });

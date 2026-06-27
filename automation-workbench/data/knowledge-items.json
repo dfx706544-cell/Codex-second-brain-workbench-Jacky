@@ -1,23 +1,62 @@
 [
   {
-    "id": "knowledge-2026-06-27-cloud-runner",
-    "createdAt": "2026-06-26T19:36:48.669Z",
+    "id": "knowledge-2026-06-27-daily-automation",
+    "createdAt": "2026-06-27T05:51:46.297Z",
     "publishedAt": "2026-06-27",
-    "title": "第二大脑 v4 云端任务运行记录",
-    "summaryZh": "云端 runner 已能写入 outputs/ 和 automation-workbench/data/，并记录米促 API 余额监控与邮件交付状态。",
+    "title": "第二大脑 v4 每日自动化运行记录",
+    "summaryZh": "每日 runner 负责生成信息简报、业务反馈、维护巡检、邮件草稿，并在 SMTP 授权后自动发往两个邮箱。",
     "sourceUrl": "automation-workbench/scripts/second-brain-cloud-runner.mjs",
-    "sourceName": "本地/云端 runner",
+    "sourceName": "Second Brain Cloud Runner",
     "domain": "system",
     "tags": [
-      "Codex Cloud",
-      "自动化",
       "第二大脑",
-      "米促 API",
-      "邮件交付"
+      "自动化",
+      "邮件",
+      "知识库",
+      "历史记录"
     ],
-    "credibility": "本地或 CI 运行记录",
-    "impact": "证明云端或 CI 环境可以生成工作台可读取的数据文件。",
-    "nextAction": "接入可信搜索源、GitHub/Codex Cloud 定时执行、米促真实余额查询和 163 SMTP 授权。"
+    "credibility": "本地脚本和自动化运行记录",
+    "impact": "为关机后的周期性任务提供可执行骨架；真实新闻、账号数据和余额仍依赖云端密钥或平台授权。",
+    "nextAction": "配置 AnySearch、SMTP、米促 API 余额查询和平台数据导出/授权。"
+  },
+  {
+    "id": "knowledge-2026-06-27-automation-boundary",
+    "createdAt": "2026-06-27T05:51:46.297Z",
+    "publishedAt": "2026-06-27",
+    "title": "本地工作台与云端后台自动化边界",
+    "summaryZh": "本地工作台关机后不能运行；电脑关机后继续执行必须依赖 Codex 定时自动化、GitHub Actions、VPS/NAS 或其他常久在线服务。",
+    "sourceUrl": "automation-workbench/cloud/README.md",
+    "sourceName": "Second Brain Cloud Notes",
+    "domain": "system",
+    "tags": [
+      "云端",
+      "本地化",
+      "关机后运行",
+      "自我迭代"
+    ],
+    "credibility": "项目架构记录",
+    "impact": "帮助区分哪些任务能后台执行，哪些任务必须开机和登录后处理。",
+    "nextAction": "把每日信息简报和业务反馈放到云端；把本机平台操作放到开机后的工作台。"
+  },
+  {
+    "id": "knowledge-2026-06-27-cloud-runner",
+    "createdAt": "2026-06-27T05:00:12.000Z",
+    "publishedAt": "2026-06-27",
+    "title": "???? v4 2026-06-27 ??????",
+    "summaryZh": "?????????????????????????????????????",
+    "sourceUrl": "outputs/daily-brief-2026-06-27.md",
+    "sourceName": "2026-06-27 ????",
+    "domain": "system",
+    "tags": [
+      "????",
+      "????",
+      "????",
+      "????",
+      "???"
+    ],
+    "credibility": "???? + ??????",
+    "impact": "? 6 ? 27 ???????????????????????????????",
+    "nextAction": "????????? inputs ??????????? SMTP?"
   },
   {
     "id": "knowledge-2026-06-26-cloud-runner",
@@ -36,28 +75,6 @@
     "credibility": "本地运行记录",
     "impact": "证明云端或 CI 环境可以生成工作台可读取的数据文件。",
     "nextAction": "接入可信搜索源和 GitHub/Codex Cloud 定时执行。"
-  },
-  {
-    "id": "knowledge-2026-06-25-workbench-v4",
-    "createdAt": "2026-06-25T00:00:00.000Z",
-    "publishedAt": "2026-06-25",
-    "title": "第二大脑工作台 v4 数据中枢设计",
-    "summaryZh": "工作台将以数据中枢为地基，统一沉淀知识、历史、简报、业务反馈、个人画像、健康和成长资料。",
-    "sourceUrl": "docs/superpowers/specs/2026-06-25-second-brain-v4-data-hub-design.md",
-    "sourceName": "本地设计文档",
-    "domain": "system",
-    "tags": [
-      "第二大脑",
-      "工作台",
-      "数据中枢"
-    ],
-    "credibility": "本地设计",
-    "relatedAssistants": [
-      "Skill Scout",
-      "个人画像助手"
-    ],
-    "impact": "为后续知识库、历史记录和每日交付提供统一数据结构。",
-    "nextAction": "实现 v4 数据中枢和页面。"
   },
   {
     "id": "knowledge-2026-06-26-codex-autonomy-boundary",
@@ -110,5 +127,27 @@
     ],
     "impact": "把本地工作台从单机工具升级为可被云端持续喂养的数据中枢。",
     "nextAction": "完成 GitHub 私有仓库连接，并在 Codex Cloud 中选择该仓库配置环境和每日任务。"
+  },
+  {
+    "id": "knowledge-2026-06-25-workbench-v4",
+    "createdAt": "2026-06-25T00:00:00.000Z",
+    "publishedAt": "2026-06-25",
+    "title": "第二大脑工作台 v4 数据中枢设计",
+    "summaryZh": "工作台将以数据中枢为地基，统一沉淀知识、历史、简报、业务反馈、个人画像、健康和成长资料。",
+    "sourceUrl": "docs/superpowers/specs/2026-06-25-second-brain-v4-data-hub-design.md",
+    "sourceName": "本地设计文档",
+    "domain": "system",
+    "tags": [
+      "第二大脑",
+      "工作台",
+      "数据中枢"
+    ],
+    "credibility": "本地设计",
+    "relatedAssistants": [
+      "Skill Scout",
+      "个人画像助手"
+    ],
+    "impact": "为后续知识库、历史记录和每日交付提供统一数据结构。",
+    "nextAction": "实现 v4 数据中枢和页面。"
   }
 ]

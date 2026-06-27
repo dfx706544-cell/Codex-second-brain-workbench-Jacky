@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, mkdir, writeFile, rm } from "node:fs/promises";
+import { createServer } from "node:http";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -17,6 +18,24 @@ async function makeFixture() {
   await mkdir(path.join(workbenchRoot, "app"), { recursive: true });
   await writeFile(path.join(workbenchRoot, "app", "index.html"), "<!doctype html><title>Workbench</title>");
   return { workspaceRoot, workbenchRoot };
+}
+
+async function occupyPort(port) {
+  const server = createServer((_req, res) => {
+    res.writeHead(200, { "content-type": "text/plain" });
+    res.end("occupied");
+  });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", resolve);
+  });
+  return server;
+}
+
+async function closeServer(server) {
+  await new Promise((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+  });
 }
 
 test("bridge persists queue tasks to a shared JSON file", async () => {
@@ -109,6 +128,30 @@ test("bridge serves the workbench app from localhost", async () => {
     assert.match(await response.text(), /Workbench/);
   } finally {
     await bridge.stop();
+    await rm(fixture.workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test("bridge can fall back beyond ten occupied desktop ports", async () => {
+  const fixture = await makeFixture();
+  const blockers = [];
+  for (let offset = 0; offset < 10; offset += 1) {
+    blockers.push(await occupyPort(9100 + offset));
+  }
+
+  const bridge = createWorkbenchBridge({
+    workspaceRoot: fixture.workspaceRoot,
+    workbenchRoot: fixture.workbenchRoot,
+    host: "127.0.0.1",
+    port: 9100
+  });
+
+  try {
+    const { port } = await bridge.start();
+    assert.equal(port, 9110);
+  } finally {
+    await bridge.stop();
+    await Promise.all(blockers.map(closeServer));
     await rm(fixture.workspaceRoot, { recursive: true, force: true });
   }
 });
@@ -248,6 +291,88 @@ test("bridge appends task history records", async () => {
     const stored = JSON.parse(await readFile(path.join(fixture.workbenchRoot, "data", "task-history.json"), "utf8"));
     assert.equal(stored[0].id, "task-1");
     assert.equal(stored[0].category, "system");
+  } finally {
+    await bridge.stop();
+    await rm(fixture.workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test("bridge exposes configured platform links", async () => {
+  const fixture = await makeFixture();
+  await mkdir(path.join(fixture.workbenchRoot, "config"), { recursive: true });
+  await writeFile(
+    path.join(fixture.workbenchRoot, "config", "settings.json"),
+    JSON.stringify({
+      workAssistant: {
+        platforms: [
+          { name: "Kalodata", url: "https://www.kalodata.com/", enabled: true, purpose: "Product research" },
+          { name: "Disabled Platform", url: "https://example.com/disabled", enabled: false, purpose: "Disabled" }
+        ]
+      }
+    }, null, 2),
+    "utf8"
+  );
+
+  const bridge = createWorkbenchBridge({
+    workspaceRoot: fixture.workspaceRoot,
+    workbenchRoot: fixture.workbenchRoot,
+    host: "127.0.0.1",
+    port: 0
+  });
+
+  try {
+    const { baseUrl } = await bridge.start();
+    const response = await fetch(`${baseUrl}/api/platforms`);
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.platforms.length, 2);
+    assert.equal(payload.platforms[0].id, "kalodata");
+    assert.equal(payload.platforms[0].enabled, true);
+    assert.equal(payload.platforms[1].enabled, false);
+  } finally {
+    await bridge.stop();
+    await rm(fixture.workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test("bridge opens configured platform links through an injected opener", async () => {
+  const fixture = await makeFixture();
+  await mkdir(path.join(fixture.workbenchRoot, "config"), { recursive: true });
+  await writeFile(
+    path.join(fixture.workbenchRoot, "config", "settings.json"),
+    JSON.stringify({
+      workAssistant: {
+        platforms: [
+          { name: "Kalodata", url: "https://www.kalodata.com/", enabled: true, purpose: "Product research" }
+        ]
+      }
+    }, null, 2),
+    "utf8"
+  );
+  const opened = [];
+  const bridge = createWorkbenchBridge({
+    workspaceRoot: fixture.workspaceRoot,
+    workbenchRoot: fixture.workbenchRoot,
+    host: "127.0.0.1",
+    port: 0,
+    openExternal: async (url) => opened.push(url)
+  });
+
+  try {
+    const { baseUrl } = await bridge.start();
+    const response = await fetch(`${baseUrl}/api/platforms/open`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "kalodata" })
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      ok: true,
+      id: "kalodata",
+      name: "Kalodata",
+      url: "https://www.kalodata.com/"
+    });
+    assert.deepEqual(opened, ["https://www.kalodata.com/"]);
   } finally {
     await bridge.stop();
     await rm(fixture.workspaceRoot, { recursive: true, force: true });

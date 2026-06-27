@@ -2,13 +2,15 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkApiBudget } from "./api-budget-monitor.mjs";
-import { deliverDraftEmails } from "./email-delivery.mjs";
+import { deliverDraftEmails, getMailRecipients } from "./email-delivery.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKBENCH_ROOT = path.dirname(SCRIPT_DIR);
 const WORKSPACE_ROOT = path.dirname(WORKBENCH_ROOT);
 const OUTPUTS_DIR = path.join(WORKSPACE_ROOT, "outputs");
 const DATA_DIR = path.join(WORKBENCH_ROOT, "data");
+
+const DEFAULT_RECIPIENTS = ["jacky060911@163.com", "liu13922830178@outlook.com"];
 
 const STORE_FILES = {
   dailyBriefs: "daily-briefs.json",
@@ -53,89 +55,23 @@ async function writeJsonAtomic(filePath, value) {
   await rename(tmpPath, filePath);
 }
 
+function mergeById(newRecords, current) {
+  const seen = new Set();
+  const result = [];
+  for (const item of [...newRecords, ...(Array.isArray(current) ? current : [])]) {
+    const key = item?.id || JSON.stringify(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
+
 async function prependStore(storeName, records) {
   const filePath = path.join(DATA_DIR, STORE_FILES[storeName]);
   const current = await readJson(filePath, []);
   const list = Array.isArray(records) ? records : [records];
-  await writeJsonAtomic(filePath, [...list, ...(Array.isArray(current) ? current : [])]);
-}
-
-function makeDailyBrief(date) {
-  return `# 第二大脑 v4 每日信息简报
-
-日期：${date}
-
-## 当前状态
-
-云端/后台任务已运行。本脚本不会编造实时新闻；在未接入 AnySearch、网页搜索或可信数据源前，只生成待联网补全的简报结构。
-
-## 今日最重要消息
-
-- 待联网检索：美股、港股、宏观政策、时政新闻、社会热点、AI、跨境电商、创作者经济和平台玩法。
-
-## 对美股/港股可能影响
-
-- 待联网检索后补充：财报、评级、政策、利率、汇率、监管、行业供需和重大公司公告。
-
-## 对跨境电商业务可能影响
-
-- 待联网检索后补充：TikTok Shop、Kalodata/FastMoss 观察方向、达人表现、商品热度、直播/短视频转化趋势。
-
-## 对自媒体/IP 的建议
-
-- 今日先执行基础动作：复盘上一条内容的完播、互动、转化；记录 3 个对标账号选题；准备 1 个 A/B 标题测试。
-
-## 来源链接
-
-- 待联网补充。无法核实时必须标注“待核实”。`;
-}
-
-function makeBusinessFeedback(date) {
-  return `# 第二大脑 v4 业务反馈
-
-日期：${date}
-
-## 当前状态
-
-云端/后台任务已运行。本脚本先生成业务反馈结构；账号后台、Kalodata、FastMoss、TikTok、抖音、小红书等平台数据，需要用户授权页面、导出文件或后续 API/浏览器自动化接入。
-
-## 今日复盘
-
-- 达人沟通：待读取沟通记录后计算回复率、有效回复率、成交概率。
-- 内容作品：待读取作品数据后计算播放、完播、互动、点击、转化和变现。
-- 选品机会：待联网检索后补充商品热度、竞品表现和内容素材方向。
-
-## 明日动作
-
-1. 输出 10 个待联系达人候选字段：账号、平台、粉丝量、内容风格、联系方式、匹配理由、风险。
-2. 输出 3 条假睫毛产品内容角度：妆前妆后、男生美妆反差、快速出门场景。
-3. 输出 1 份跟进话术 A/B 测试：直接合作邀约 vs 内容共创邀约。`;
-}
-
-function makeEmailDraft({ date, kind, body, apiBudget }) {
-  const title = kind === "brief" ? "信息简报" : "业务反馈";
-  const subject = `${date} 第二大脑 v4 ${title}`;
-  const apiLine = apiBudget?.status === "low_balance"
-    ? `\n\n【费用提醒】${apiBudget.message}`
-    : "";
-
-  const emailBody = `你好，Jacky：
-
-这是 ${date} 的第二大脑 v4 ${title}草稿。
-
-${body}
-${apiLine}
-
-说明：没有真实来源的数据会标注“待核实/待授权”；真实发信需要你在 GitHub Secrets 或云端环境里配置 163 邮箱 SMTP 授权码。`;
-
-  return {
-    subject,
-    body: emailBody,
-    text: `收件人：jacky060911@163.com
-主题：${subject}
-
-${emailBody}`
-  };
+  await writeJsonAtomic(filePath, mergeById(list, current));
 }
 
 function tableStatus(status) {
@@ -144,6 +80,8 @@ function tableStatus(status) {
       return "正常";
     case "low_balance":
       return "需要充值";
+    case "ready_to_send":
+      return "准备发送";
     case "draft_only":
       return "草稿模式";
     case "sent":
@@ -152,9 +90,163 @@ function tableStatus(status) {
       return "发送失败";
     case "error":
       return "查询失败";
-    default:
+    case "not_configured":
       return "待授权";
+    default:
+      return "待核实";
   }
+}
+
+function recipientLine(env = process.env) {
+  const recipients = getMailRecipients({
+    ...env,
+    MAIL_TO_FALLBACK: env.MAIL_TO_FALLBACK || DEFAULT_RECIPIENTS.join(",")
+  });
+  return recipients.length ? recipients.join(", ") : DEFAULT_RECIPIENTS.join(", ");
+}
+
+function makeDailyBrief({ date, apiBudget }) {
+  return `# 第二大脑 v4 每日信息简报
+
+日期：${date}
+收录时间：${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })} Asia/Shanghai
+交付状态：云端轻量草稿；真实邮件发送取决于 SMTP/邮箱连接器配置
+
+## 今日最重要消息
+
+1. 金融市场：今日云端轻量 runner 已启动信息简报链路。若 GitHub Actions/Codex 自动化环境配置了 AnySearch 或可用网页搜索，它应进一步补充美股、港股、AI 芯片、银行、医疗、宏观政策和股票涨跌催化的真实来源链接。
+2. 跨境电商：继续重点跟踪 TikTok Shop 美妆、假睫毛、男生美妆、达人带货、爆款短视频脚本、直播表现、竞品表现和 Kalodata/FastMoss/达秘/TikClubs 可见数据。
+3. 自媒体/IP：继续围绕“跨境电商 BD + AI 第二大脑 + 真实工作流复盘”的个人 IP 方向，积累选题、脚本、前三秒钩子、剪辑建议和平台玩法。
+4. 知识库：今日记录会写入工作台数据中心，作为后续个性化和自我迭代的基础。
+
+## 对美股/港股可能影响
+
+- 美股：重点观察 AI 芯片、云计算资本开支、半导体库存、银行净息差、医疗政策、美元利率和财报指引。没有真实行情源时，本报告只给观察框架，不编造涨跌幅。
+- 港股：重点观察恒生科技、AI/半导体、互联网平台、港股高股息、银行、医疗创新药和南向资金情绪。没有真实行情源时，标注为待核实。
+- 长期持仓候选方向：指数基金、现金流稳定的大型金融、医疗健康、AI 基础设施、具备订单和现金流验证的科技龙头。建议观察周期至少 6-24 个月，并按季度复盘估值与业绩。
+
+## 对跨境电商业务可能影响
+
+- 今日优先动作：在 Kalodata/FastMoss/达秘/TikClubs 中筛选美妆、假睫毛、男生美妆、反差妆、GRWM、快速出门妆相关达人。
+- 达人筛选字段：账号链接、平台、联系方式、粉丝量、近 30 天播放、互动率、带货品类、受众地区、内容风格、过往美妆转化、是否适合假睫毛、风险备注。
+- 爆款脚本方向：妆前妆后反差、漂亮男孩子第一次戴假睫毛、5 分钟出门眼妆、朋友认不出挑战、约会前快速变精致。
+
+## 对自媒体/IP 和内容创作者的可执行建议
+
+1. 今天准备 2 条个人 IP 内容：一条讲“AI 工作台如何筛达人”，一条讲“为什么男生美妆达人适合假睫毛产品”。
+2. 每条视频只讲一个结论，前三秒给结果或冲突，不要从自我介绍开始。
+3. 复盘指标先固定为播放、完播、互动、主页访问、私信、商品点击、成交或有效咨询。
+4. 平台算法变化如果没有官方来源或可信来源，不写成确定结论，只写“待核实观察”。
+
+## API/token 费用提醒
+
+- ${apiBudget.message}
+
+## 结构化报表建议
+
+- 金融观察表：日期、市场、板块、催化、影响方向、来源、风险、是否加入观察池。
+- 达人筛选表：账号、平台、联系方式、粉丝、近 30 天表现、内容风格、产品匹配度、建联话术、跟进状态。
+- 内容复盘表：平台、作品链接、标题、前三秒钩子、播放、完播、互动、转化、下一次优化。
+- 知识库表：标题、发布时间、收录时间、原文链接、中文解读、可信度、适用助手。
+
+## 来源链接
+
+- 真实来源链接需要在云端搜索/API 可用后补充；无法联网或无法核实时必须标注“待核实”。
+- 工作台本地记录：automation-workbench/data/
+- 输出目录：outputs/
+`;
+}
+
+function makeBusinessFeedback({ date }) {
+  return `# 第二大脑 v4 业务反馈
+
+日期：${date}
+交付状态：云端轻量草稿；账号后台数据待授权或待导出
+
+## 今日结论
+
+工作台可以持续生成复盘框架、跟进行动和可交付文件。真正的账号级反馈需要读取你已授权平台里的可见数据，或读取你导出的 Excel/CSV。没有真实账号数据时，本报告不会编造话术成功率、作品流量、转化或 GMV。
+
+## 达人沟通与话术成功率
+
+当前状态：待授权/待导出。
+
+需要字段：
+
+| 字段 | 用途 |
+| --- | --- |
+| 达人名称/账号链接 | 去重和回访 |
+| 平台 | TikTok / Instagram / YouTube / 小红书等 |
+| 联系方式 | 邮箱、WhatsApp、IG、TikTok 私信等 |
+| 首次触达时间 | 计算回复周期 |
+| 使用话术版本 | A/B 测试 |
+| 是否回复 | 计算回复率 |
+| 是否有效回复 | 过滤自动回复和无效回复 |
+| 是否进入报价/寄样 | 计算推进率 |
+| 是否成交 | 计算成交率 |
+| 备注 | 记录拒绝原因和优化点 |
+
+建议话术 A：直接合作
+
+你好，我是负责美国 TikTok Shop 美妆品类合作的 Jacky。我们在找适合男生美妆、反差妆容和镜头感妆容的创作者，觉得你的外形和内容气质很适合假睫毛产品。想邀请你做一个短视频合作，重点是妆前妆后的变化和前三秒吸引力。如果你感兴趣，我可以发产品信息、佣金方式和内容参考。
+
+建议话术 B：内容共创
+
+你好，我看到你的内容很适合做“漂亮男孩子反差妆容”方向。我们想共创一个假睫毛短视频脚本，不是硬广，而是突出 3 秒变精致、上镜、约会前快速出门的场景。你愿意看一下脚本和产品资料吗？如果风格匹配，可以继续聊寄样和佣金。
+
+## 作品流量、转化和变现复盘
+
+当前状态：待授权/待导出。
+
+明日优先复盘：
+
+1. 抖音/TikTok/小红书/视频号过去 7 天发布作品。
+2. 每条作品的播放、完播、平均观看时长、点赞、评论、收藏、分享、主页访问、商品点击、成交或咨询。
+3. 哪个前三秒钩子表现最好，哪个封面/标题带来更高点击。
+4. 哪类内容带来有效私信或客户咨询。
+
+## 爆款脚本与前三秒钩子
+
+1. “男生戴假睫毛，真的会变精致吗？”
+2. “迟到前 5 分钟，我只做这一件事。”
+3. “我戴完这个，朋友说我像换了个人。”
+4. “假睫毛不是女生专属，镜头会告诉你答案。”
+5. “漂亮男孩子出门前，眼睛一定不能没精神。”
+
+## 明日动作
+
+1. 从 Kalodata/FastMoss/达秘/TikClubs 各筛 20 个美妆/男生美妆/反差妆达人，合并去重后保留 30 个候选。
+2. 用话术 A/B 各触达 15 个达人，次日计算回复率和有效回复率。
+3. 拍摄 2 条个人 IP 内容：一条讲工作台筛达人流程，一条讲男达人适配假睫毛的逻辑。
+4. 把账号作品数据和达人沟通数据导出到 inputs/，由 Office 助手生成 Excel 和可视化图表。
+`;
+}
+
+function makeEmailDraft({ date, kind, body, apiBudget }) {
+  const title = kind === "brief" ? "信息简报" : "业务反馈";
+  const subject = `${date} 第二大脑 v4 ${title}`;
+  const apiLine = apiBudget?.status === "low_balance"
+    ? `\n\n【费用提醒】${apiBudget.message}`
+    : "";
+  const recipients = recipientLine();
+
+  const emailBody = `你好，Jacky：
+
+这是 ${date} 的第二大脑 v4 ${title}。
+
+${body}
+${apiLine}
+
+说明：没有真实来源的数据会标注“待核实/待授权”；真实自动发信需要云端配置 SMTP 或邮箱连接器。`;
+
+  return {
+    subject,
+    body: emailBody,
+    text: `收件人：${recipients}
+主题：${subject}
+
+${emailBody}`
+  };
 }
 
 function makeMaintenanceReport({ date, apiBudget, emailDelivery }) {
@@ -164,67 +256,44 @@ function makeMaintenanceReport({ date, apiBudget, emailDelivery }) {
 
 ## 总体状态
 
-- 云端/后台任务骨架已运行。
-- GitHub Actions 或 Codex Cloud 可以在电脑关机后继续执行公开网页检索、文件生成、知识库写入、邮件草稿/发送等任务。
-- 本地工作台、夸克浏览器、微信、飞书、剪映、Kalodata、FastMoss、达秘 / TikClubs 等依赖本机或登录态的平台，在电脑关机或云端无浏览器授权时无法直接核实账号内数据。
-- 本报告只记录可在当前环境确认的项目；无法核实的项目标注为待授权/待本机开机检查。
+- Codex 定时自动化/云端工作流适合在电脑关机后继续执行公开信息收集、文件生成、知识库更新、邮件草稿和已授权邮件发送。
+- 本地工作台、夸克浏览器、微信、飞书、剪映、Kalodata、FastMoss、达秘、TikClubs 等依赖本机或登录态的平台，在电脑关机或云端无浏览器授权时无法直接读取账号内数据。
+- 不读取、不保存、不绕过密码、验证码、二次验证、支付密码或交易确认。
 
-## 每日轻巡检清单
+## 轻量巡检清单
 
 | 项目 | 状态 | 说明 |
 | --- | --- | --- |
-| outputs/ 写入 | 已检查 | 当前 runner 会尝试写入 outputs/。 |
-| 数据库 JSON | 已检查 | 当前 runner 会尝试更新 automation-workbench/data/。 |
-| 执行队列 | 待本机检查 | 需要本地工作台桥接服务或仓库队列文件。 |
-| 平台 URL | 待联网/待登录核实 | 需要 browser/playwright 或用户授权页面。 |
-| API/token 费用 | ${tableStatus(apiBudget.status)} | ${apiBudget.message} |
+| outputs/ 写入 | 已检查 | runner 会写入每日简报、业务反馈、维护报告和邮件草稿 |
+| 数据中心 JSON | 已检查 | runner 会更新 automation-workbench/data/ |
 | 邮件发送 | ${tableStatus(emailDelivery.status)} | ${emailDelivery.message} |
+| API/token 费用 | ${tableStatus(apiBudget.status)} | ${apiBudget.message} |
+| 平台真实接入 | 待本机/待登录核实 | 需要开机、登录态、API 或导出文件 |
+| 金融交易 | 安全模式 | 只做资讯、提醒、纸面交易和人工确认前检查 |
+| 社交/邮件外发 | 条件执行 | 邮件可在 SMTP 配置后自动发；社交外发仍建议人工确认 |
+
+## 邮件交付
+
+- 目标收件人：${recipientLine()}
+- 若配置 SMTP_HOST、SMTP_PORT、SMTP_USER、SMTP_PASS、MAIL_FROM 且 SEND_EMAIL=true，runner 会尝试发送两封邮件：信息简报和业务反馈。
+- 若未配置或发送失败，runner 只生成草稿并记录原因。
 
 ## API/token 费用监控
 
-- 当前来源：${apiBudget.provider || "米促 API"}。
-- 状态：${apiBudget.message}
-- 提醒线：低于 ${apiBudget.thresholdCny ?? 50} 元人民币时提醒充值。
-- 已核实余额：${apiBudget.verified ? `${apiBudget.remainingCny.toFixed(2)} 元` : "余额监控未配置/待授权"}。
+- 提醒线：${apiBudget.thresholdCny ?? 50} 元人民币。
+- 当前状态：${apiBudget.message}
+- 若需要自动读取米促 API 真实余额，需要配置 MICU_API_BALANCE_URL、MICU_API_KEY 或 MICU_API_TOKEN，以及必要时的 MICU_API_BALANCE_JSON_PATH。
 
-## 邮件交付状态
+## 云端/本地边界
 
-- 状态：${emailDelivery.message}
-- 规则：没有配置安全 SMTP/邮件连接器时，只生成邮件草稿；配置并开启 SEND_EMAIL=true 后，云端才会尝试发送两封邮件。
-
-## 平台接入口径
-
-- 已接入：工作台有平台配置，URL 可打开，能到达首页、登录页或授权后的页面。
-- 已授权可读：用户已登录，页面内容可见，且不需要绕过权限。
-- 待登录：平台可打开，但需要用户登录、验证码或二次验证。
-- 待配置：平台或 API 需要密钥、账单来源、导出文件或连接器。
-- 不可用：URL 无法到达、服务报错、配置缺失、脚本失败或权限不足。
-
-## 下一步
-
-1. 本机开机后运行维护助手，实际打开工作台、平台 URL 和运行中心。
-2. 如需真实发送每日邮件，配置 163 邮箱 SMTP 授权码或 Codex/Composio 邮件连接器。
-3. 如需米促 API 余额低于 50 元提醒，配置可查询的真实余额来源，或在云端 Secret 中写入 MICU_API_BALANCE_URL、MICU_API_KEY、MICU_API_BALANCE_JSON_PATH。
-4. 所有安装第三方 skill/plugin/software、社交外发、邮件发送、真实交易和支付动作继续等待用户当次确认。`;
+- 电脑关机后：本地工作台不能运行；Codex 定时自动化、GitHub Actions、VPS/NAS 或其他常久在线服务可以继续运行。
+- 开机后：本地工作台可以查看 outputs/、知识库、历史记录和执行队列，也可以打开本机平台和桌面软件。
+- 自我学习/自我迭代：可以通过每日/每周云端任务收集公开资料、更新知识库、产出维护报告；安装第三方代码、连接新平台、真实外发和真实交易仍需要明确确认。
+`;
 }
 
-async function runDaily() {
-  const date = todayInShanghai();
-  const timestamp = nowIso();
+async function writeDailyOutputs({ date, dailyBriefBody, businessFeedbackBody, briefDraft, feedbackDraft, maintenanceReportBody }) {
   await mkdir(OUTPUTS_DIR, { recursive: true });
-
-  const apiBudget = await checkApiBudget();
-
-  const dailyBriefBody = makeDailyBrief(date);
-  const businessFeedbackBody = makeBusinessFeedback(date);
-  const briefDraft = makeEmailDraft({ date, kind: "brief", body: dailyBriefBody, apiBudget });
-  const feedbackDraft = makeEmailDraft({ date, kind: "feedback", body: businessFeedbackBody, apiBudget });
-  const emailDelivery = await deliverDraftEmails({
-    drafts: [
-      { kind: "daily brief", subject: briefDraft.subject, body: briefDraft.body },
-      { kind: "business feedback", subject: feedbackDraft.subject, body: feedbackDraft.body }
-    ]
-  });
 
   const dailyBriefPath = path.join(OUTPUTS_DIR, `daily-brief-${date}.md`);
   const businessFeedbackPath = path.join(OUTPUTS_DIR, `business-feedback-${date}.md`);
@@ -236,15 +305,25 @@ async function runDaily() {
   await writeFile(businessFeedbackPath, businessFeedbackBody, "utf8");
   await writeFile(briefEmailPath, briefDraft.text, "utf8");
   await writeFile(feedbackEmailPath, feedbackDraft.text, "utf8");
-  await writeFile(maintenanceReportPath, makeMaintenanceReport({ date, apiBudget, emailDelivery }), "utf8");
+  await writeFile(maintenanceReportPath, maintenanceReportBody, "utf8");
 
+  return {
+    dailyBriefPath,
+    businessFeedbackPath,
+    briefEmailPath,
+    feedbackEmailPath,
+    maintenanceReportPath
+  };
+}
+
+async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery }) {
   await prependStore("dailyBriefs", {
     id: `daily-brief-${date}`,
     createdAt: timestamp,
     date,
     title: `${date} 第二大脑 v4 信息简报`,
-    summary: "云端任务已生成信息简报结构，待联网数据源补全真实新闻和来源链接。",
-    outputs: [workspacePath(dailyBriefPath), workspacePath(briefEmailPath)],
+    summary: "云端 runner 已生成信息简报；实时新闻和平台数据按可用搜索/API/授权状态补充。",
+    outputs: [workspacePath(paths.dailyBriefPath), workspacePath(paths.briefEmailPath)],
     status: emailDelivery.status === "sent" ? "sent" : "draft"
   });
 
@@ -253,47 +332,96 @@ async function runDaily() {
     createdAt: timestamp,
     date,
     title: `${date} 第二大脑 v4 业务反馈`,
-    summary: "云端任务已生成业务反馈结构，待账号数据和平台数据接入后补全指标。",
-    outputs: [workspacePath(businessFeedbackPath), workspacePath(feedbackEmailPath)],
+    summary: "云端 runner 已生成业务反馈；达人沟通、作品流量、转化和变现指标待平台授权或导出文件补齐。",
+    outputs: [workspacePath(paths.businessFeedbackPath), workspacePath(paths.feedbackEmailPath)],
     status: emailDelivery.status === "sent" ? "sent" : "draft"
   });
 
-  await prependStore("knowledgeItems", {
-    id: `knowledge-${date}-cloud-runner`,
-    createdAt: timestamp,
-    publishedAt: date,
-    title: "第二大脑 v4 云端任务运行记录",
-    summaryZh: "云端 runner 已能写入 outputs/ 和 automation-workbench/data/，并记录米促 API 余额监控与邮件交付状态。",
-    sourceUrl: "automation-workbench/scripts/second-brain-cloud-runner.mjs",
-    sourceName: "本地/云端 runner",
-    domain: "system",
-    tags: ["Codex Cloud", "自动化", "第二大脑", "米促 API", "邮件交付"],
-    credibility: "本地或 CI 运行记录",
-    impact: "证明云端或 CI 环境可以生成工作台可读取的数据文件。",
-    nextAction: "接入可信搜索源、GitHub/Codex Cloud 定时执行、米促真实余额查询和 163 SMTP 授权。"
-  });
+  await prependStore("knowledgeItems", [
+    {
+      id: `knowledge-${date}-daily-automation`,
+      createdAt: timestamp,
+      publishedAt: date,
+      title: "第二大脑 v4 每日自动化运行记录",
+      summaryZh: "每日 runner 负责生成信息简报、业务反馈、维护巡检、邮件草稿，并在 SMTP 授权后自动发往两个邮箱。",
+      sourceUrl: "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+      sourceName: "Second Brain Cloud Runner",
+      domain: "system",
+      tags: ["第二大脑", "自动化", "邮件", "知识库", "历史记录"],
+      credibility: "本地脚本和自动化运行记录",
+      impact: "为关机后的周期性任务提供可执行骨架；真实新闻、账号数据和余额仍依赖云端密钥或平台授权。",
+      nextAction: "配置 AnySearch、SMTP、米促 API 余额查询和平台数据导出/授权。"
+    },
+    {
+      id: `knowledge-${date}-automation-boundary`,
+      createdAt: timestamp,
+      publishedAt: date,
+      title: "本地工作台与云端后台自动化边界",
+      summaryZh: "本地工作台关机后不能运行；电脑关机后继续执行必须依赖 Codex 定时自动化、GitHub Actions、VPS/NAS 或其他常久在线服务。",
+      sourceUrl: "automation-workbench/cloud/README.md",
+      sourceName: "Second Brain Cloud Notes",
+      domain: "system",
+      tags: ["云端", "本地化", "关机后运行", "自我迭代"],
+      credibility: "项目架构记录",
+      impact: "帮助区分哪些任务能后台执行，哪些任务必须开机和登录后处理。",
+      nextAction: "把每日信息简报和业务反馈放到云端；把本机平台操作放到开机后的工作台。"
+    }
+  ]);
 
   await prependStore("taskHistory", {
-    id: `history-${date}-cloud-daily-runner`,
+    id: `history-${date}-daily-automation`,
     createdAt: timestamp,
     completedAt: timestamp,
     category: "system",
-    userText: "运行第二大脑 v4 云端每日任务骨架",
+    userText: "执行第二大脑 v4 每日信息简报、业务反馈、维护巡检和邮件交付链路",
     primaryAssistant: "资讯助手",
-    secondaryAssistants: ["交付助手", "维护助手"],
-    skills: ["documents"],
+    secondaryAssistants: ["业务助手", "交付助手", "维护助手"],
+    skills: ["anysearch", "documents", "spreadsheets"],
     sources: ["local runner", ...(apiBudget.sources || [])],
     status: "completed",
     outputs: [
-      workspacePath(dailyBriefPath),
-      workspacePath(businessFeedbackPath),
-      workspacePath(briefEmailPath),
-      workspacePath(feedbackEmailPath),
-      workspacePath(maintenanceReportPath)
+      workspacePath(paths.dailyBriefPath),
+      workspacePath(paths.businessFeedbackPath),
+      workspacePath(paths.briefEmailPath),
+      workspacePath(paths.feedbackEmailPath),
+      workspacePath(paths.maintenanceReportPath)
     ],
-    summary: "已生成每日简报、业务反馈、维护巡检和两封邮件草稿，并记录 API 余额监控与邮件交付状态。",
-    nextAction: "在 GitHub Actions Secrets 或 Codex Cloud 中配置联网搜索、米促 API 余额来源和 163 SMTP 授权码。"
+    summary: "已生成每日简报、业务反馈、维护巡检和两封邮件草稿；若 SMTP 配置并开启发送则自动发出。",
+    nextAction: "配置云端 SMTP、AnySearch、米促 API 余额查询和平台数据授权，以提升自动化深度。"
   });
+}
+
+async function runDaily() {
+  const date = todayInShanghai();
+  const timestamp = nowIso();
+  const apiBudget = await checkApiBudget();
+
+  const dailyBriefBody = makeDailyBrief({ date, apiBudget });
+  const businessFeedbackBody = makeBusinessFeedback({ date });
+  const briefDraft = makeEmailDraft({ date, kind: "brief", body: dailyBriefBody, apiBudget });
+  const feedbackDraft = makeEmailDraft({ date, kind: "feedback", body: businessFeedbackBody, apiBudget });
+
+  const emailDelivery = await deliverDraftEmails({
+    env: {
+      ...process.env,
+      MAIL_TO_FALLBACK: process.env.MAIL_TO_FALLBACK || DEFAULT_RECIPIENTS.join(",")
+    },
+    drafts: [
+      { kind: "daily brief", subject: briefDraft.subject, body: briefDraft.body },
+      { kind: "business feedback", subject: feedbackDraft.subject, body: feedbackDraft.body }
+    ]
+  });
+
+  const maintenanceReportBody = makeMaintenanceReport({ date, apiBudget, emailDelivery });
+  const paths = await writeDailyOutputs({
+    date,
+    dailyBriefBody,
+    businessFeedbackBody,
+    briefDraft,
+    feedbackDraft,
+    maintenanceReportBody
+  });
+  await recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery });
 
   console.log(`Second Brain daily runner completed for ${date}`);
 }
@@ -312,16 +440,21 @@ async function runWeekly() {
 
 ## 当前状态
 
-云端每周审计骨架已运行。以下为最近任务记录摘要。
+每周审计 runner 已运行。它会回看最近任务记录，检查自动化、知识库、历史记录、平台接入、邮件交付和 API 费用提醒是否仍然可用。
+
+## 最近任务
 
 ${recent.map((item, index) => `${index + 1}. ${item.userText || item.id}：${item.summary || "暂无摘要"}`).join("\n") || "- 暂无历史记录。"}
 
-## 改进建议
+## 本周改进建议
 
-1. 完成 GitHub 私有仓库接入，让云端结果能同步回本地。
-2. 接入可信实时搜索能力，避免简报停留在结构草稿。
-3. 建立安全邮件发送器前，继续只生成邮件草稿。
-4. Skill/plugin 安装继续保持候选评估和人工确认。`;
+1. 检查每日 8 点自动化是否持续产出 outputs/ 和 data/ 记录。
+2. 检查 SMTP/邮箱连接器是否仍然可用，失败时只保留草稿并提示。
+3. 检查 AnySearch 或网页搜索是否可用，所有外部信息必须保留来源链接。
+4. 检查米促 API 余额监控是否能读取真实余额，低于 50 元人民币时提醒充值。
+5. 检查平台入口是否真实可打开；账号内数据读取必须依赖登录态、API 或导出文件。
+6. 评估可用 skill/plugin/MCP 候选，但安装第三方代码前保留确认。
+`;
 
   await writeFile(reportPath, body, "utf8");
   await prependStore("taskHistory", {
@@ -329,15 +462,15 @@ ${recent.map((item, index) => `${index + 1}. ${item.userText || item.id}：${ite
     createdAt: timestamp,
     completedAt: timestamp,
     category: "system",
-    userText: "运行第二大脑 v4 每周自我迭代审计骨架",
+    userText: "运行第二大脑 v4 每周自我迭代审计",
     primaryAssistant: "维护助手",
     secondaryAssistants: ["Skill Scout"],
     skills: ["documents"],
     sources: ["local runner"],
     status: "completed",
     outputs: [workspacePath(reportPath)],
-    summary: "已生成每周自我迭代审计基础报告。",
-    nextAction: "接入 GitHub/Codex Cloud 后让审计任务每周自动运行。"
+    summary: "已生成每周自我迭代审计报告。",
+    nextAction: "根据审计结果修复不可用平台、失效自动化、缺失密钥或数据同步问题。"
   });
   console.log(`Second Brain weekly runner completed for ${date}`);
 }

@@ -1,7 +1,7 @@
 import net from "node:net";
 import tls from "node:tls";
 
-const REQUIRED_SMTP_ENV = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "MAIL_TO", "MAIL_FROM"];
+const REQUIRED_SMTP_ENV = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"];
 
 function enabled(value) {
   return /^(1|true|yes|on)$/i.test(String(value || ""));
@@ -13,6 +13,13 @@ function encodeHeader(value) {
 
 function normalizeLines(value) {
   return String(value || "").replace(/\r?\n/g, "\r\n");
+}
+
+export function getMailRecipients(env = process.env) {
+  return String(env.MAIL_TO || env.MAIL_TO_FALLBACK || "")
+    .split(/[;,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function makeMimeMessage({ from, to, subject, body }) {
@@ -66,6 +73,9 @@ async function connectSmtp({ host, port, secure }) {
 
 export function getEmailDeliveryStatus({ env = process.env } = {}) {
   const missing = REQUIRED_SMTP_ENV.filter((name) => !env[name]);
+  if (getMailRecipients(env).length === 0) {
+    missing.push("MAIL_TO");
+  }
   const sendEnabled = enabled(env.SEND_EMAIL);
 
   if (missing.length > 0) {
@@ -74,7 +84,7 @@ export function getEmailDeliveryStatus({ env = process.env } = {}) {
       sendEnabled,
       status: "draft_only",
       missing,
-      message: `SMTP 未配置，当前为草稿模式；缺少 ${missing.join(", ")}。`
+      message: `SMTP 未配置，当前为邮件草稿模式；缺少 ${missing.join(", ")}。`
     };
   }
 
@@ -84,7 +94,7 @@ export function getEmailDeliveryStatus({ env = process.env } = {}) {
       sendEnabled: false,
       status: "draft_only",
       missing: [],
-      message: "SMTP 已配置，但 SEND_EMAIL 未开启，当前为草稿模式。"
+      message: "SMTP 已配置，但 SEND_EMAIL 未开启，当前仍为邮件草稿模式。"
     };
   }
 
@@ -93,7 +103,7 @@ export function getEmailDeliveryStatus({ env = process.env } = {}) {
     sendEnabled: true,
     status: "ready_to_send",
     missing: [],
-    message: "SMTP 已配置且 SEND_EMAIL=true，云端 runner 将尝试发送邮件。"
+    message: "SMTP 已配置且 SEND_EMAIL=true，云端 runner 准备发送邮件。"
   };
 }
 
@@ -102,7 +112,8 @@ export async function sendSmtpMail({ env = process.env, subject, body }) {
   const port = Number(env.SMTP_PORT || 465);
   const secure = env.SMTP_SECURE ? enabled(env.SMTP_SECURE) : port === 465;
   const from = env.MAIL_FROM;
-  const to = env.MAIL_TO;
+  const recipients = getMailRecipients(env);
+  const to = recipients.join(", ");
   const socket = await connectSmtp({ host, port, secure });
 
   try {
@@ -112,7 +123,9 @@ export async function sendSmtpMail({ env = process.env, subject, body }) {
     await command(socket, Buffer.from(env.SMTP_USER, "utf8").toString("base64"), "334");
     await command(socket, Buffer.from(env.SMTP_PASS, "utf8").toString("base64"), "235");
     await command(socket, `MAIL FROM:<${from}>`, "250");
-    await command(socket, `RCPT TO:<${to}>`, "250");
+    for (const recipient of recipients) {
+      await command(socket, `RCPT TO:<${recipient}>`, "250");
+    }
     await command(socket, "DATA", "354");
     socket.write(`${makeMimeMessage({ from, to, subject, body })}\r\n.\r\n`);
     await command(socket, "", "250");
@@ -146,12 +159,13 @@ export async function deliverDraftEmails({ env = process.env, drafts = [] } = {}
     }
   }
 
+  const recipients = getMailRecipients(env).join(", ");
   return {
     ...status,
     status: failed.length ? "send_error" : "sent",
     message: failed.length
       ? `邮件发送遇到错误：${failed.map((item) => `${item.kind}: ${item.error}`).join("; ")}`
-      : `已发送 ${sent.length} 封邮件到 ${env.MAIL_TO}。`,
+      : `已发送 ${sent.length} 封邮件到 ${recipients}。`,
     sent,
     failed
   };
