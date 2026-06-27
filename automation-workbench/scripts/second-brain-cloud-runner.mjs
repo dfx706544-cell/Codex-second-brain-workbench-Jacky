@@ -105,6 +105,31 @@ function recipientLine(env = process.env) {
   return recipients.length ? recipients.join(", ") : DEFAULT_RECIPIENTS.join(", ");
 }
 
+function makeTaskCostSection({ apiBudget }) {
+  return `## 预计任务执行成本
+
+- 本次轻量日报/反馈 runner 本身：预计 0 元人民币的本地脚本费用；如果在 GitHub Actions 免费额度内运行，通常不产生额外云端运行费，超出额度以 GitHub 账单为准。
+- LLM/API/token：取决于是否调用米促 API、OpenAI/Codex、AnySearch 或其他模型服务；未读取到真实账单接口前，只能标注待核实，不编造金额。
+- 邮件发送：使用 163 SMTP 发送到白名单邮箱通常不另收 SMTP 费用，但邮箱服务策略、发送频率和失败重试需持续观察。
+- 第三方平台订阅：Kalodata、FastMoss、达秘/TikClubs、剪映、数据源或代理等费用独立于工作台，需要按各平台套餐核算。
+- 余额提醒：${apiBudget.message}`;
+}
+
+function makeMaintenanceCostSection({ apiBudget }) {
+  return `## 运行与维护成本
+
+| 成本项 | 当前判断 | 说明 |
+| --- | --- | --- |
+| 米促 API/token | ${tableStatus(apiBudget.status)} | ${apiBudget.message} |
+| GitHub Actions / 云端任务 | 待账单核实 | 若在免费额度内通常为 0 元人民币；超出后以 GitHub 账号账单为准。 |
+| Codex / OpenAI 调用 | 待账单核实 | 取决于模型、token、工具调用和自动化频率；每次复杂任务开始前应先给出预计人民币成本区间。 |
+| 163 SMTP 邮件 | 预计 0 元人民币 | 只发送到已配置白名单邮箱；真实可用性以 SMTP 发送结果为准。 |
+| 第三方平台订阅 | 待平台核实 | Kalodata、FastMoss、达秘/TikClubs、数据源、剪映会员等由各平台独立收费。 |
+| 本地电脑运行 | 低额但非零 | 开机运行会消耗电费和网络；关机后需依赖云端或常久在线机器。 |
+
+维护策略：每日轻量同步 API 余额和邮件状态；每周同步系统运行、稳定性、云端任务、平台入口、skills/plugins 和预估人民币维护成本。`;
+}
+
 function makeDailyBrief({ date, apiBudget }) {
   return `# 第二大脑 v4 每日信息简报
 
@@ -118,6 +143,15 @@ function makeDailyBrief({ date, apiBudget }) {
 2. 跨境电商：继续重点跟踪 TikTok Shop 美妆、假睫毛、男生美妆、达人带货、爆款短视频脚本、直播表现、竞品表现和 Kalodata/FastMoss/达秘/TikClubs 可见数据。
 3. 自媒体/IP：继续围绕“跨境电商 BD + AI 第二大脑 + 真实工作流复盘”的个人 IP 方向，积累选题、脚本、前三秒钩子、剪辑建议和平台玩法。
 4. 知识库：今日记录会写入工作台数据中心，作为后续个性化和自我迭代的基础。
+
+## AI 技术最新发展
+
+- 模型与 Agent：每日跟踪 OpenAI、Anthropic、Google、Meta、xAI、阿里、智谱、DeepSeek 等模型、智能体、工具调用、长上下文、代码能力和企业应用进展；未检索到官方或可信来源时标注待核实。
+- 多模态与内容生产：跟踪文本、图像、语音、视频、剪辑、直播脚本和数字人能力，重点判断能否提升无垠工作台、剪辑助手、自媒体/IP 助手和电商 BD 工作效率。
+- 开源模型与本地部署：关注开源大模型、推理框架、端侧模型、RAG、知识库、Obsidian/Markdown 工作流和自动化代理工具，筛选可安全接入的候选。
+- AI 芯片与基础设施：关注 GPU、HBM、先进封装、云厂商资本开支、推理成本下降和算力供给变化，并映射到美股/港股长期观察池。
+- 监管、安全与版权：关注中国大陆、美国、欧盟及主流平台对生成式 AI、数据合规、内容标识、版权和模型安全的政策变化。
+- 对你的可执行意义：优先把“能降低成本、提高筛达人/写脚本/做报表/知识库更新效率”的技术加入候选清单；安装第三方代码前仍要记录来源、风险和确认项。
 
 ## 对美股/港股可能影响
 
@@ -141,6 +175,8 @@ function makeDailyBrief({ date, apiBudget }) {
 ## API/token 费用提醒
 
 - ${apiBudget.message}
+
+${makeTaskCostSection({ apiBudget })}
 
 ## 结构化报表建议
 
@@ -283,6 +319,8 @@ function makeMaintenanceReport({ date, apiBudget, emailDelivery }) {
 - 提醒线：${apiBudget.thresholdCny ?? 50} 元人民币。
 - 当前状态：${apiBudget.message}
 - 若需要自动读取米促 API 真实余额，需要配置 MICU_API_BALANCE_URL、MICU_API_KEY 或 MICU_API_TOKEN，以及必要时的 MICU_API_BALANCE_JSON_PATH。
+
+${makeMaintenanceCostSection({ apiBudget })}
 
 ## 云端/本地边界
 
@@ -454,6 +492,14 @@ ${recent.map((item, index) => `${index + 1}. ${item.userText || item.id}：${ite
 4. 检查米促 API 余额监控是否能读取真实余额，低于 50 元人民币时提醒充值。
 5. 检查平台入口是否真实可打开；账号内数据读取必须依赖登录态、API 或导出文件。
 6. 评估可用 skill/plugin/MCP 候选，但安装第三方代码前保留确认。
+
+## 运行与维护成本
+
+- 预计人民币成本：每周审计本身若只跑本地脚本约 0 元；若调用模型、搜索 API、网页抓取、云端 runner 或第三方平台，则按实际 API/token、平台套餐和云端账单核算。
+- GitHub Actions：检查是否仍在免费额度或可接受额度内；超出时记录账单来源。
+- 邮件：163 SMTP 白名单邮件预计 0 元，但需要监控失败率、授权码状态和发送频率限制。
+- 第三方平台订阅：Kalodata、FastMoss、达秘/TikClubs、剪映、数据源等单独列入维护成本。
+- 下周动作：在每日/每周反馈中固定同步“已核实费用、待核实费用、余额是否低于 50 元、预计下次任务成本”。
 `;
 
   await writeFile(reportPath, body, "utf8");

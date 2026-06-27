@@ -92,10 +92,17 @@ test("daily cloud runner writes workbench-readable outputs and data", async () =
     const dailyBrief = await readLatestDailyBrief(fixture);
     assert.match(dailyBrief, /第二大脑 v4 每日信息简报/);
     assert.match(dailyBrief, /美股/);
+    assert.match(dailyBrief, /AI 技术最新发展/);
+    assert.match(dailyBrief, /模型与 Agent/);
+    assert.match(dailyBrief, /预计任务执行成本/);
+    assert.match(dailyBrief, /人民币/);
     assert.doesNotMatch(dailyBrief, MOJIBAKE_PATTERN);
 
     const maintenanceReport = await readLatestMaintenanceReport(fixture);
     assert.match(maintenanceReport, /API\/token/);
+    assert.match(maintenanceReport, /运行与维护成本/);
+    assert.match(maintenanceReport, /GitHub Actions/);
+    assert.match(maintenanceReport, /第三方平台订阅/);
     assert.match(maintenanceReport, /余额监控未配置\/待授权/);
     assert.match(maintenanceReport, /50 元人民币/);
     assert.match(maintenanceReport, /平台真实接入/);
@@ -201,6 +208,8 @@ test("weekly cloud runner writes an evolution audit without existing history", a
 
     const report = await readFile(path.join(fixture.tmpRoot, taskHistory[0].outputs[0]), "utf8");
     assert.match(report, /每周自我迭代审计/);
+    assert.match(report, /运行与维护成本/);
+    assert.match(report, /预计人民币成本/);
     assert.doesNotMatch(report, MOJIBAKE_PATTERN);
   } finally {
     await rm(fixture.tmpRoot, { recursive: true, force: true });

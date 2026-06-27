@@ -151,54 +151,64 @@ function slugifyPlatformId(value) {
 }
 
 function normalizePlatform(platform, source = "settings") {
-  if (!platform || !platform.name || !platform.url) return null;
-  let parsedUrl;
-  try {
-    parsedUrl = new URL(platform.url);
-  } catch {
-    return null;
+  if (!platform || !platform.name || (!platform.url && !platform.appPath)) return null;
+  let normalizedUrl = "";
+  if (platform.url) {
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(platform.url);
+    } catch {
+      return null;
+    }
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) return null;
+    normalizedUrl = parsedUrl.href;
   }
-  if (!["http:", "https:"].includes(parsedUrl.protocol)) return null;
 
   return {
     id: platform.id || slugifyPlatformId(platform.name),
     name: platform.name,
     group: platform.group || source,
-    url: parsedUrl.href,
+    url: normalizedUrl,
+    appPath: platform.appPath || "",
     enabled: platform.enabled !== false,
     purpose: platform.purpose || platform.note || "",
     source
   };
 }
 
-async function defaultOpenExternal(targetUrl) {
+async function defaultOpenExternal(target) {
   let command;
   let args;
 
   if (process.platform === "win32") {
-    const quarkCandidates = [
-      process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Programs", "Quark", "quark.exe"),
-      process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Quark", "quark.exe"),
-      process.env.ProgramFiles && path.join(process.env.ProgramFiles, "Quark", "quark.exe"),
-      process.env["ProgramFiles(x86)"] && path.join(process.env["ProgramFiles(x86)"], "Quark", "quark.exe")
-    ].filter(Boolean);
-    const quark = (await Promise.all(quarkCandidates.map(async (candidate) => (
-      (await fileExists(candidate)) ? candidate : ""
-    )))).find(Boolean);
+    if (/^https?:\/\//i.test(target)) {
+      const quarkCandidates = [
+        process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Programs", "Quark", "quark.exe"),
+        process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Quark", "quark.exe"),
+        process.env.ProgramFiles && path.join(process.env.ProgramFiles, "Quark", "quark.exe"),
+        process.env["ProgramFiles(x86)"] && path.join(process.env["ProgramFiles(x86)"], "Quark", "quark.exe")
+      ].filter(Boolean);
+      const quark = (await Promise.all(quarkCandidates.map(async (candidate) => (
+        (await fileExists(candidate)) ? candidate : ""
+      )))).find(Boolean);
 
-    if (quark) {
-      command = quark;
-      args = ["--new-window", targetUrl];
+      if (quark) {
+        command = quark;
+        args = ["--new-window", target];
+      } else {
+        command = "rundll32.exe";
+        args = ["url.dll,FileProtocolHandler", target];
+      }
     } else {
-      command = "rundll32.exe";
-      args = ["url.dll,FileProtocolHandler", targetUrl];
+      command = target;
+      args = [];
     }
   } else if (process.platform === "darwin") {
     command = "open";
-    args = [targetUrl];
+    args = [target];
   } else {
     command = "xdg-open";
-    args = [targetUrl];
+    args = [target];
   }
 
   const child = spawn(command, args, {
@@ -348,7 +358,7 @@ function createWorkbenchBridge(options = {}) {
       error.statusCode = 409;
       throw error;
     }
-    await openExternal(platform.url);
+    await openExternal(platform.appPath || platform.url);
     return platform;
   }
 
@@ -562,7 +572,8 @@ function createWorkbenchBridge(options = {}) {
         ok: true,
         id: platform.id,
         name: platform.name,
-        url: platform.url
+        url: platform.url,
+        appPath: platform.appPath
       });
       return;
     }

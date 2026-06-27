@@ -370,9 +370,61 @@ test("bridge opens configured platform links through an injected opener", async 
       ok: true,
       id: "kalodata",
       name: "Kalodata",
-      url: "https://www.kalodata.com/"
+      url: "https://www.kalodata.com/",
+      appPath: ""
     });
     assert.deepEqual(opened, ["https://www.kalodata.com/"]);
+  } finally {
+    await bridge.stop();
+    await rm(fixture.workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test("bridge opens configured local app paths through an injected opener", async () => {
+  const fixture = await makeFixture();
+  await mkdir(path.join(fixture.workbenchRoot, "config"), { recursive: true });
+  await writeFile(
+    path.join(fixture.workbenchRoot, "config", "settings.json"),
+    JSON.stringify({
+      workAssistant: {
+        platforms: [
+          {
+            id: "obsidian",
+            name: "Obsidian",
+            appPath: "C:\\Users\\Jacky\\AppData\\Local\\Programs\\Obsidian\\Obsidian.exe",
+            enabled: true,
+            purpose: "Knowledge base"
+          }
+        ]
+      }
+    }, null, 2),
+    "utf8"
+  );
+  const opened = [];
+  const bridge = createWorkbenchBridge({
+    workspaceRoot: fixture.workspaceRoot,
+    workbenchRoot: fixture.workbenchRoot,
+    host: "127.0.0.1",
+    port: 0,
+    openExternal: async (target) => opened.push(target)
+  });
+
+  try {
+    const { baseUrl } = await bridge.start();
+    const response = await fetch(`${baseUrl}/api/platforms/open`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "obsidian" })
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      ok: true,
+      id: "obsidian",
+      name: "Obsidian",
+      url: "",
+      appPath: "C:\\Users\\Jacky\\AppData\\Local\\Programs\\Obsidian\\Obsidian.exe"
+    });
+    assert.deepEqual(opened, ["C:\\Users\\Jacky\\AppData\\Local\\Programs\\Obsidian\\Obsidian.exe"]);
   } finally {
     await bridge.stop();
     await rm(fixture.workspaceRoot, { recursive: true, force: true });

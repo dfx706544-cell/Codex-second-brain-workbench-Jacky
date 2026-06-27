@@ -15,6 +15,7 @@ __pycache__/
 automation-workbench/queue/bridge-status.json
 automation-workbench/queue/bridge-*.log
 automation-workbench/queue/*.tmp
+automation-workbench/obsidian-vault/
 
 # Sensitive local inputs
 inputs/private/

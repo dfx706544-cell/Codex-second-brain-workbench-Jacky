@@ -89,6 +89,13 @@ automation-workbench/queue/tasks.json
 
 如果没有安全邮件发送配置，工作台只生成邮件草稿和附件，不直接发送。
 
+如果云端已经配置 SMTP Secrets、`SEND_EMAIL=true` 和白名单收件人，GitHub Actions/Codex Cloud runner 可自动发送两封邮件到你的邮箱：
+
+- 信息简报
+- 业务反馈
+
+微信、飞书、社交私信、上传、发布、交易、支付和安装第三方代码仍然需要当次确认。
+
 ## 第二大脑 v4
 
 v4 采用数据中枢路线。核心数据保存在 `automation-workbench/data/`：
@@ -110,6 +117,35 @@ v4 采用数据中枢路线。核心数据保存在 `automation-workbench/data/`
 - 个人画像助手：记录你确认过的目标、偏好、约束和工作方式。
 
 默认只生成草稿、报表和附件。邮件发送、社交平台回复、上传、提交、安装、真实交易等动作仍然需要你在当次任务中明确确认。
+
+## Obsidian 知识库
+
+已支持把工作台数据导出为 Obsidian 可打开的 Markdown 笔记库：
+
+```powershell
+node automation-workbench/scripts/export-obsidian-vault.mjs --out automation-workbench/obsidian-vault
+```
+
+默认导出：
+
+- `Knowledge/`：知识库条目。
+- `Daily Briefs/`：每日信息简报索引。
+- `Business Feedback/`：业务反馈索引。
+- `Task History/`：任务历史记录。
+
+导出的 `automation-workbench/obsidian-vault/` 是本地个人数据，已加入 `.gitignore`，不进入公开模板。
+
+## 成本口径
+
+之后每次任务执行前或执行开始时，默认给出人民币成本口径：
+
+- 本地脚本、打开工作台、整理本地文件：通常 0 元人民币。
+- LLM/API/token、AnySearch、米促 API、OpenAI/Codex：按实际调用和账单核算；无法读取账单时标注待核实。
+- GitHub Actions/Codex Cloud：免费额度内通常 0 元，超出按 GitHub/OpenAI 账单核算。
+- 163 SMTP：发送白名单邮件通常不另收 SMTP 费用，但需要监控发送失败和邮箱限制。
+- Kalodata、FastMoss、达秘/TikClubs、剪映等第三方平台：按各自订阅套餐独立核算。
+
+每日/每周维护反馈会同步“已核实费用、待核实费用、余额是否低于 50 元、下一次任务预计成本”。
 
 ## 真正自动化与关机后运行
 

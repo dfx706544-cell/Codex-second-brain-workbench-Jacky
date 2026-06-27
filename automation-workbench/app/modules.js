@@ -158,7 +158,8 @@ window.WORKBENCH_SOURCES = [
   { id: "sec", name: "SEC", group: "金融", url: "https://www.sec.gov/edgar/search/", defaultModules: ["trading", "news"], note: "美股公告、财报和监管文件。" },
   { id: "hkexnews", name: "HKEXnews", group: "金融", url: "https://www.hkexnews.hk/", defaultModules: ["trading", "news"], note: "港股公告、财报和公司披露。" },
   { id: "github", name: "GitHub", group: "技能", url: "https://github.com/", defaultModules: ["skills"], note: "搜索 Codex skills、插件和自动化脚本。" },
-  { id: "google_scholar", name: "Google Scholar", group: "学术", url: "https://scholar.google.com/", defaultModules: ["news"], note: "市场、AI、营销、消费者行为等学术信息。" }
+  { id: "google_scholar", name: "Google Scholar", group: "学术", url: "https://scholar.google.com/", defaultModules: ["news"], note: "市场、AI、营销、消费者行为等学术信息。" },
+  { id: "obsidian", name: "Obsidian", group: "知识库", url: "https://obsidian.md/", defaultModules: ["news", "growth", "profile", "maintenance"], note: "本地 Markdown 第二大脑工具；安装后可用于沉淀知识库、日报和个人画像笔记。" }
 ];
 
 window.WORKBENCH_SKILLS = [
@@ -226,10 +227,11 @@ window.WORKBENCH_PROMPTS = {
 3. 涉及平台、网站或账号后台时，优先在后端使用 browser、chrome、playwright、AnySearch、API、导出文件或已经授权的可见页面执行；优先在后端打开我已经授权且在工作台里显示的平台。
 4. 如果无法在后台完成，或者必须依赖桌面应用、夸克浏览器、剪映、微信、飞书、邮箱、验证码页面、文件选择器等前台界面，请请求接管我的电脑，在前台打开对应平台；需要我登录、验证码、二次验证、支付密码、交易密码或人工确认时立刻停下让我操作，不要读取、保存或绕过密码。
 5. 金融相关只做资讯、信号提醒、纸面交易、风险清单、持仓监控建议和人工确认前检查，不执行真实下单、支付或交易。
-6. 邮件、微信、飞书、社交私信、上传、发布、提交、安装第三方 skill/plugin/software 等外部动作，先生成草稿、候选清单和确认清单；真正外发或安装前等待我当次确认。
-7. 如果涉及 API 费用或 token 余额，请检查是否已配置真实账单/余额来源；当可核实余额低于 50 元人民币时提醒我充值。无法读取真实余额时，标注“余额监控未配置/待授权”，不要编造金额。
-8. 最终把结果、报表、草稿、来源链接和任务记录保存到 outputs/，并尽量更新 automation-workbench/data/task-history.json、daily-briefs.json、business-feedback.json 或 knowledge-items.json。
-9. 最后用简洁中文说明完成了什么、文件在哪里、来源链接有哪些、哪些动作等待我确认、哪些平台或权限还需要补齐。`,
+6. 邮件、微信、飞书、社交私信、上传、发布、提交、安装第三方 skill/plugin/software 等外部动作，先生成草稿、候选清单和确认清单；已配置白名单 SMTP 邮件可按安全发送器规则自动发给我的邮箱，其他真正外发或安装前等待我当次确认。
+7. 开始执行时先给出本次任务预计人民币成本口径；无法精确核算时给出保守区间，并标注哪些费用待账单/API 核实。
+8. 如果涉及 API 费用或 token 余额，请检查是否已配置真实账单/余额来源；当可核实余额低于 50 元人民币时提醒我充值。无法读取真实余额时，标注“余额监控未配置/待授权”，不要编造金额。
+9. 最终把结果、报表、草稿、来源链接和任务记录保存到 outputs/，并尽量更新 automation-workbench/data/task-history.json、daily-briefs.json、business-feedback.json 或 knowledge-items.json。
+10. 最后用简洁中文说明完成了什么、文件在哪里、预计/实际成本口径、来源链接有哪些、哪些动作等待我确认、哪些平台或权限还需要补齐。`,
   inbox: `请启动信息助手。
 目标：整理飞书、微信、邮箱和社交平台中用户指定范围内的可见消息。
 要求：
@@ -256,12 +258,13 @@ window.WORKBENCH_PROMPTS = {
   dailyBrief: `请生成每日 8 点信息简报并准备邮件交付。
 收件邮箱：jacky060911@163.com
 要求：
-1. 自动联网搜集并整理金融、跨境电商、内容平台、自媒体/IP、AI、社会热点和学术信息。
+1. 自动联网搜集并整理金融、跨境电商、内容平台、自媒体/IP、AI、AI 技术最新发展、社会热点和学术信息。
 2. 同时覆盖中国大陆和海外信息源。
 3. 无论来源是中文还是英文，解读都必须用通俗易懂的中文。
 4. 每条重要信息必须带真实可查询的网址来源，不编造数据。
 5. 输出一份中文简报、一份结构化报表，并保存到 outputs/。
-6. 邮件正文先生成草稿；真正发送前需要用户确认或配置安全邮件发送方式。`,
+6. 固定加入“AI 技术最新发展”“预计任务执行成本”“API/token 费用提醒”和“运行与维护成本”。
+7. 邮件正文先生成草稿；如已配置安全 SMTP 白名单发送器，可自动发送到 jacky060911@163.com 和 liu13922830178@outlook.com；其他外发前需要用户确认。`,
   knowledgeUpdate: `请更新 automation-workbench/knowledge/ 下的实时知识库。
 要求：
 1. 使用 AnySearch 或网页搜索查询最新市场、业务、创作者平台和学术信息。

@@ -26,6 +26,11 @@
       "Kalodata",
       "FastMoss",
       "AI industry",
+      "AI technology latest developments",
+      "AI agents and automation",
+      "AI model releases",
+      "open-source AI models",
+      "AI chips and infrastructure",
       "creator economy",
       "personal branding",
       "TikTok",
@@ -35,6 +40,12 @@
       "WeChat Channels",
       "Xiaohongshu",
       "academic research"
+    ],
+    "requiredSections": [
+      "AI 技术最新发展",
+      "预计任务执行成本",
+      "API/token 费用提醒",
+      "运行与维护成本"
     ],
     "sources": [
       "AnySearch",
@@ -142,6 +153,14 @@
         "url": "https://wx.qq.com/",
         "enabled": true,
         "purpose": "Message triage and reply drafts with user confirmation"
+      },
+      {
+        "id": "obsidian",
+        "name": "Obsidian",
+        "url": "https://obsidian.md/",
+        "appPath": "C:\\Users\\嘉十一\\AppData\\Local\\Programs\\Obsidian\\Obsidian.exe",
+        "enabled": true,
+        "purpose": "Local Markdown second-brain vault, knowledge notes, daily briefs, personal profile and research library"
       }
     ]
   },
@@ -181,6 +200,22 @@
       "balanceSource": "MICU_API_BALANCE_URL + MICU_API_KEY, or MICU_API_BALANCE_CNY for manual verified snapshots",
       "action": "notify_recharge_needed",
       "notes": "Only alert on a verified Micu API billing or balance source. If no source is configured, report that balance monitoring needs authorization instead of inventing an amount."
+    },
+    "costReporting": {
+      "enabled": true,
+      "currency": "CNY",
+      "perTaskEstimate": "before_or_at_task_start",
+      "dailyFeedback": true,
+      "weeklyMaintenanceFeedback": true,
+      "include": [
+        "LLM/API/token",
+        "GitHub Actions or cloud runner",
+        "email delivery",
+        "third-party platform subscriptions",
+        "local PC runtime",
+        "manual verification time"
+      ],
+      "policy": "Use verified billing or configured balance sources when available. If unavailable, provide a conservative estimate range and mark the exact amount as pending verification."
     },
     "automationHealth": {
       "dailyBriefTime": "08:00",
