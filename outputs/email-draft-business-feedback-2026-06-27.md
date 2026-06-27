@@ -1,4 +1,4 @@
-收件人：jacky060911@163.com, liu13922830178@outlook.com
+收件人：MAIL_TO
 主题：2026-06-27 第二大脑 v4 业务反馈
 
 你好，Jacky：

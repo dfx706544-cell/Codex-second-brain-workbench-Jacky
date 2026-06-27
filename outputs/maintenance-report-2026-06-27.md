@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | outputs/ 写入 | 已检查 | runner 会写入每日简报、业务反馈、维护报告和邮件草稿 |
 | 数据中心 JSON | 已检查 | runner 会更新 automation-workbench/data/ |
-| 邮件发送 | 草稿模式 | SMTP 未配置，当前为邮件草稿模式；缺少 SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM。 |
+| 邮件发送 | 发送失败 | 邮件发送遇到错误：daily brief: Port should be >= 0 and < 65536. Received type number (NaN).; business feedback: Port should be >= 0 and < 65536. Received type number (NaN). |
 | API/token 费用 | 待授权 | 余额监控未配置/待授权：请配置米促 API 的余额查询地址和密钥；未核实前不编造金额。 |
 | 平台真实接入 | 待本机/待登录核实 | 需要开机、登录态、API 或导出文件 |
 | 金融交易 | 安全模式 | 只做资讯、提醒、纸面交易和人工确认前检查 |
@@ -22,7 +22,7 @@
 
 ## 邮件交付
 
-- 目标收件人：jacky060911@163.com, liu13922830178@outlook.com
+- 目标收件人：MAIL_TO
 - 若配置 SMTP_HOST、SMTP_PORT、SMTP_USER、SMTP_PASS、MAIL_FROM 且 SEND_EMAIL=true，runner 会尝试发送两封邮件：信息简报和业务反馈。
 - 若未配置或发送失败，runner 只生成草稿并记录原因。
 
