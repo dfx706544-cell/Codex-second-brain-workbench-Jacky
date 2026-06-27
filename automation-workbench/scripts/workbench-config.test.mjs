@@ -22,32 +22,39 @@ test("workbench exposes an operations center tab and view", async () => {
   assert.match(html, /queue-state\.js/);
 });
 
-test("workbench uses Shiyi second-brain branding and exposes a clean cloud copy entry", async () => {
+test("workbench uses Wuyin second-brain branding and exposes a clean cloud copy entry", async () => {
   const html = await readFile(new URL("../app/index.html", import.meta.url), "utf8");
   const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
 
-  assert.match(html, /<title>十一 第二大脑自动化工作台<\/title>/);
-  assert.match(html, /<h1>十一<\/h1>/);
+  assert.match(html, /<title>无垠 第二大脑自动化工作台<\/title>/);
+  assert.match(html, /<h1>无垠<\/h1>/);
+  assert.match(html, /Wuyin Second Brain Workbench/);
   assert.match(html, /第二大脑自动化工作台/);
   assert.match(html, /id="copyCloudWorkbenchButton"/);
   assert.match(html, /一键复制我的工作台/);
 
   assert.match(appSource, /copyCloudWorkbenchButton/);
   assert.match(appSource, /CLOUD_TEMPLATE_URL/);
+  assert.match(appSource, /无垠第二大脑自动化工作台/);
   assert.match(appSource, /干净独立模板/);
   assert.match(appSource, /不包含 Jacky 的历史记录、outputs、队列、账号权限或后台自动化/);
 });
 
-test("workbench app shell uses an eye-friendly dark theme", async () => {
+test("workbench app shell uses a premium graphite dark theme without green accents", async () => {
   const css = await readFile(new URL("../app/styles.css", import.meta.url), "utf8");
 
   assert.match(css, /color-scheme:\s*dark/);
-  assert.match(css, /--bg:\s*#0b0f14/);
-  assert.match(css, /--panel:\s*#121821/);
-  assert.match(css, /--ink:\s*#edf2f7/);
+  assert.match(css, /--bg:\s*#07080b/);
+  assert.match(css, /--panel:\s*#10131a/);
+  assert.match(css, /--ink:\s*#f4f7fb/);
+  assert.match(css, /--accent:\s*#a8c3ff/);
   assert.doesNotMatch(css, /color-scheme:\s*light/);
-  assert.match(css, /body\s*{[\s\S]*background:\s*var\(--bg\)/);
-  assert.match(css, /\.topbar\s*{[\s\S]*background:\s*#0f151d/);
+  for (const oldGreen of ["#29b99a", "#17816d", "#18342f", "#225e51", "#102722"]) {
+    assert.doesNotMatch(css, new RegExp(oldGreen, "i"));
+  }
+  assert.match(css, /body\s*{[\s\S]*background:\s*[\s\S]*linear-gradient\(180deg,\s*#07080b/);
+  assert.match(css, /\.topbar\s*{[\s\S]*background:\s*linear-gradient\(180deg,\s*#0d1017,\s*#090b10\)/);
+  assert.match(css, /\.hero-band\s*{[\s\S]*background:\s*linear-gradient\(135deg,/);
 });
 
 test("workbench bridge discovery can find fallback operation-center ports", async () => {

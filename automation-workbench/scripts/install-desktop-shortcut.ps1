@@ -27,7 +27,7 @@ $Shortcut.TargetPath = $PowerShell
 $Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$Launcher`""
 $Shortcut.WorkingDirectory = $Workspace
 $Shortcut.WindowStyle = 7
-$Shortcut.Description = "Open Shiyi second brain automation workbench"
+$Shortcut.Description = "Open Wuyin second brain automation workbench"
 
 if (Test-Path -LiteralPath $QuarkIcon) {
   $Shortcut.IconLocation = "$QuarkIcon,0"
