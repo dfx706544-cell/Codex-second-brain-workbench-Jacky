@@ -1,5 +1,6 @@
 const DEFAULT_THRESHOLD_CNY = 50;
 const DEFAULT_MAX_REASONABLE_BALANCE_CNY = 1_000_000;
+const DEFAULT_MAX_REASONABLE_QUOTA = Number.MAX_SAFE_INTEGER;
 
 function toNumber(value) {
   if (value === undefined || value === null || value === "") return null;
@@ -57,6 +58,41 @@ function findLikelyBalance(json) {
   return null;
 }
 
+function findNewApiTokenUsage(json, sourceUrl = "") {
+  const data = json?.data;
+  if (!data || typeof data !== "object") return null;
+
+  const urlLooksLikeTokenUsage = /\/api\/usage\/token(?:\?|$)/.test(sourceUrl);
+  const isTokenUsage =
+    urlLooksLikeTokenUsage ||
+    data.object === "token_usage" ||
+    ["total_granted", "total_used", "unlimited_quota"].some((key) =>
+      Object.prototype.hasOwnProperty.call(data, key)
+    );
+  if (!isTokenUsage) return null;
+
+  const totalGranted = toNumber(data.total_granted);
+  const totalUsed = toNumber(data.total_used);
+  const explicitAvailable = toNumber(data.total_available);
+  const totalAvailable = explicitAvailable !== null
+    ? explicitAvailable
+    : totalGranted !== null && totalUsed !== null
+      ? totalGranted - totalUsed
+      : null;
+
+  if (totalAvailable === null) return null;
+
+  return {
+    object: data.object || "token_usage",
+    totalGranted,
+    totalUsed,
+    totalAvailable,
+    unlimitedQuota: Boolean(data.unlimited_quota),
+    expiresAt: data.expires_at ?? null,
+    path: "data.total_available"
+  };
+}
+
 function makeStatus({ provider, thresholdCny, remainingCny, sourceName, checkedAt }) {
   if (remainingCny < thresholdCny) {
     return {
@@ -87,6 +123,36 @@ function makeStatus({ provider, thresholdCny, remainingCny, sourceName, checkedA
 
 function isPlausibleBalance(value) {
   return value >= 0 && value <= DEFAULT_MAX_REASONABLE_BALANCE_CNY;
+}
+
+function isPlausibleQuota(value) {
+  return value >= -DEFAULT_MAX_REASONABLE_QUOTA && value <= DEFAULT_MAX_REASONABLE_QUOTA;
+}
+
+function makeTokenUsageStatus({ provider, thresholdCny, tokenUsage, sourceName, checkedAt }) {
+  const quotaText = tokenUsage.unlimitedQuota
+    ? "无限额度"
+    : `${tokenUsage.totalAvailable.toLocaleString("zh-CN")} 额度单位`;
+  const grantedText = tokenUsage.totalGranted === null ? "未知" : tokenUsage.totalGranted.toLocaleString("zh-CN");
+  const usedText = tokenUsage.totalUsed === null ? "未知" : tokenUsage.totalUsed.toLocaleString("zh-CN");
+  const base = `${provider} 当前 API key 剩余额度为 ${quotaText}（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；总授予 ${grantedText}，已用 ${usedText}。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 ${thresholdCny} 元人民币的充值提醒暂未自动启用。`;
+
+  return {
+    provider,
+    configured: true,
+    verified: true,
+    currencyVerified: false,
+    status: tokenUsage.unlimitedQuota || tokenUsage.totalAvailable > 0 ? "quota_ok" : "quota_exhausted",
+    thresholdCny,
+    quotaAvailable: tokenUsage.totalAvailable,
+    quotaGranted: tokenUsage.totalGranted,
+    quotaUsed: tokenUsage.totalUsed,
+    checkedAt,
+    sources: [sourceName],
+    message: tokenUsage.unlimitedQuota || tokenUsage.totalAvailable > 0
+      ? base
+      : `${base} 当前 key 配额已不足或为负，请到米醋 API 后台检查令牌额度、模型权限或更换有效 key。`
+  };
 }
 
 function buildAuthHeader(env) {
@@ -165,6 +231,30 @@ export async function checkApiBudget({ env = process.env, fetchImpl = globalThis
     }
 
     const json = await response.json();
+    const tokenUsage = findNewApiTokenUsage(json, balanceUrl);
+    if (tokenUsage) {
+      if (!isPlausibleQuota(tokenUsage.totalAvailable)) {
+        return {
+          provider,
+          configured: true,
+          verified: false,
+          status: "error",
+          thresholdCny,
+          checkedAt,
+          sources: [`${balanceUrl}#${tokenUsage.path}`],
+          message: `API/token 监控失败：读取到的 New API key 配额字段异常（${tokenUsage.path}=${tokenUsage.totalAvailable}），未将其当作真实可用额度。`
+        };
+      }
+
+      return makeTokenUsageStatus({
+        provider,
+        thresholdCny,
+        tokenUsage,
+        sourceName: `${balanceUrl}#${tokenUsage.path}`,
+        checkedAt
+      });
+    }
+
     const explicitPath = env.MICU_API_BALANCE_JSON_PATH || "";
     const explicitValue = explicitPath ? toNumber(getPathValue(json, explicitPath)) : null;
     const found = explicitValue !== null ? { value: explicitValue, path: explicitPath } : findLikelyBalance(json);

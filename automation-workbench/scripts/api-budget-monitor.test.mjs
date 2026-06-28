@@ -96,3 +96,64 @@ test("Micu API budget monitor treats implausible balance values as unverified", 
   assert.match(result.message, /余额字段异常/);
   assert.doesNotMatch(result.message, /请尽快充值/);
 });
+
+test("Micu API budget monitor recognizes New API token usage as quota, not RMB balance", async () => {
+  const result = await checkApiBudget({
+    env: {
+      MICU_API_PROVIDER_NAME: "米醋 API",
+      MICU_API_BALANCE_URL: "https://www.micuapi.ai/api/usage/token",
+      MICU_API_KEY: "secret",
+      MICU_API_BALANCE_JSON_PATH: "data.total_available"
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        data: {
+          object: "token_usage",
+          total_granted: 1000000,
+          total_used: 420000,
+          total_available: 580000,
+          unlimited_quota: false
+        }
+      })
+    })
+  });
+
+  assert.equal(result.status, "quota_ok");
+  assert.equal(result.verified, true);
+  assert.equal(result.currencyVerified, false);
+  assert.equal(result.quotaAvailable, 580000);
+  assert.match(result.message, /New API token_usage/);
+  assert.match(result.message, /不是钱包人民币余额/);
+  assert.doesNotMatch(result.message, /请尽快充值/);
+});
+
+test("Micu API budget monitor flags exhausted New API token usage without treating it as low RMB balance", async () => {
+  const result = await checkApiBudget({
+    env: {
+      MICU_API_PROVIDER_NAME: "米醋 API",
+      MICU_API_BALANCE_URL: "https://www.micuapi.ai/api/usage/token",
+      MICU_API_KEY: "secret",
+      MICU_API_BALANCE_JSON_PATH: "data.total_available"
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        data: {
+          object: "token_usage",
+          total_granted: 1000000,
+          total_used: 1200000,
+          total_available: -200000,
+          unlimited_quota: false
+        }
+      })
+    })
+  });
+
+  assert.equal(result.status, "quota_exhausted");
+  assert.equal(result.verified, true);
+  assert.equal(result.currencyVerified, false);
+  assert.equal(result.quotaAvailable, -200000);
+  assert.match(result.message, /key 配额已不足或为负/);
+  assert.doesNotMatch(result.message, /低于 50 元人民币，请尽快充值/);
+});

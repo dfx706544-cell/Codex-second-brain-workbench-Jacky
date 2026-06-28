@@ -49,6 +49,8 @@ https://github.com/dfx706544-cell/Codex-second-brain-workbench-Jacky/settings/se
 | `MICU_API_AUTH_HEADER` | 默认 `Authorization` |
 | `MICU_API_AUTH_SCHEME` | 默认 `Bearer` |
 
+如果使用 New API 兼容接口 `/api/usage/token`，返回的 `data.total_available` 是当前 API key 的可用额度，不是钱包人民币余额。工作台会把它作为“API key 配额”记录，帮助判断 key 是否还可用，但不会拿它和“50 元人民币”充值线直接比较。若要触发人民币余额低于 50 元提醒，请配置真实的钱包/账单余额接口，或使用下面的 `MICU_API_BALANCE_CNY` 人工核实快照。
+
 ### 方式 B：人工核实快照
 
 如果米促暂时没有余额查询接口，可以先手动填一个经过你确认的余额：

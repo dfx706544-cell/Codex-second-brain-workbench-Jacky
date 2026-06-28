@@ -83,6 +83,10 @@ function tableStatus(status) {
       return "正常";
     case "low_balance":
       return "需要充值";
+    case "quota_ok":
+      return "额度正常";
+    case "quota_exhausted":
+      return "额度不足";
     case "ready_to_send":
       return "准备发送";
     case "draft_only":
