@@ -1,4 +1,5 @@
 const DEFAULT_THRESHOLD_CNY = 50;
+const DEFAULT_MAX_REASONABLE_BALANCE_CNY = 1_000_000;
 
 function toNumber(value) {
   if (value === undefined || value === null || value === "") return null;
@@ -82,6 +83,10 @@ function makeStatus({ provider, thresholdCny, remainingCny, sourceName, checkedA
     sources: [sourceName],
     message: `${provider} 当前可核实余额为 ${remainingCny.toFixed(2)} 元，高于 ${thresholdCny} 元人民币提醒线。`
   };
+}
+
+function isPlausibleBalance(value) {
+  return value >= 0 && value <= DEFAULT_MAX_REASONABLE_BALANCE_CNY;
 }
 
 function buildAuthHeader(env) {
@@ -174,6 +179,19 @@ export async function checkApiBudget({ env = process.env, fetchImpl = globalThis
         checkedAt,
         sources: [balanceUrl],
         message: "余额监控失败：米促 API 返回了数据，但没有找到余额字段；请配置 MICU_API_BALANCE_JSON_PATH。"
+      };
+    }
+
+    if (!isPlausibleBalance(found.value)) {
+      return {
+        provider,
+        configured: true,
+        verified: false,
+        status: "error",
+        thresholdCny,
+        checkedAt,
+        sources: [`${balanceUrl}#${found.path}`],
+        message: `余额监控失败：读取到的余额字段异常（${found.path}=${found.value}），未将其当作真实人民币余额；请配置正确的 MICU_API_BALANCE_JSON_PATH。`
       };
     }
 

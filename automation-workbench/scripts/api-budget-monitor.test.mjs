@@ -77,3 +77,22 @@ test("Micu API budget monitor strips hidden characters from URL and auth header"
   assert.equal(result.status, "ok");
   assert.equal(result.remainingCny, 188.8);
 });
+
+test("Micu API budget monitor treats implausible balance values as unverified", async () => {
+  const result = await checkApiBudget({
+    env: {
+      MICU_API_BALANCE_URL: "https://example.test/api/balance",
+      MICU_API_KEY: "secret",
+      MICU_API_BALANCE_JSON_PATH: "data.total_available"
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({ data: { total_available: "-656253962" } })
+    })
+  });
+
+  assert.equal(result.status, "error");
+  assert.equal(result.verified, false);
+  assert.match(result.message, /余额字段异常/);
+  assert.doesNotMatch(result.message, /请尽快充值/);
+});
