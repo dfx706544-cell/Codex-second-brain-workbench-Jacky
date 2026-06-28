@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { checkApiBudget } from "./api-budget-monitor.mjs";
 import { updateDailyBriefLibrary } from "./daily-brief-library.mjs";
 import { deliverDraftEmails, getMailRecipients } from "./email-delivery.mjs";
+import { deliverFeishuFallback } from "./feishu-delivery.mjs";
 import { loadRuntimeEnv } from "./runtime-env.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -93,7 +94,11 @@ function tableStatus(status) {
     case "error":
       return "查询失败";
     case "not_configured":
-      return "待授权";
+      return "待配置";
+    case "disabled":
+      return "已关闭";
+    case "skipped":
+      return "已跳过";
     default:
       return "待核实";
   }
@@ -289,7 +294,24 @@ ${emailBody}`
   };
 }
 
-function makeMaintenanceReport({ date, apiBudget, emailDelivery }) {
+function makeFeishuFallbackMessage({ date, apiBudget, emailDelivery }) {
+  return [
+    `无垠每日交付提醒 ${date}`,
+    "",
+    `邮件状态：${emailDelivery.message}`,
+    `API/token：${apiBudget.message}`,
+    "",
+    "今日文件已生成并写回 GitHub 仓库：",
+    `- outputs/daily-brief-${date}.md`,
+    `- outputs/business-feedback-${date}.md`,
+    `- outputs/maintenance-report-${date}.md`,
+    "- outputs/daily-brief-latest.md",
+    "",
+    "说明：这是 SMTP 邮件不可达时的飞书备用交付。完整内容请查看仓库 outputs/ 或开机后打开无垠工作台。"
+  ].join("\n");
+}
+
+function makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery }) {
   return `# 第二大脑 v4 维护巡检报告
 
 日期：${date}
@@ -307,6 +329,7 @@ function makeMaintenanceReport({ date, apiBudget, emailDelivery }) {
 | outputs/ 写入 | 已检查 | runner 会写入每日简报、业务反馈、维护报告和邮件草稿 |
 | 数据中心 JSON | 已检查 | runner 会更新 automation-workbench/data/ |
 | 邮件发送 | ${tableStatus(emailDelivery.status)} | ${emailDelivery.message} |
+| 飞书备用交付 | ${tableStatus(feishuDelivery.status)} | ${feishuDelivery.message} |
 | API/token 费用 | ${tableStatus(apiBudget.status)} | ${apiBudget.message} |
 | 平台真实接入 | 待本机/待登录核实 | 需要开机、登录态、API 或导出文件 |
 | 金融交易 | 安全模式 | 只做资讯、提醒、纸面交易和人工确认前检查 |
@@ -317,6 +340,12 @@ function makeMaintenanceReport({ date, apiBudget, emailDelivery }) {
 - 目标收件人：${recipientLine()}
 - 若配置 SMTP_HOST、SMTP_PORT、SMTP_USER、SMTP_PASS、MAIL_FROM 且 SEND_EMAIL=true，runner 会尝试发送两封邮件：信息简报和业务反馈。
 - 若未配置或发送失败，runner 只生成草稿并记录原因。
+
+## 飞书备用交付
+
+- 当前状态：${feishuDelivery.message}
+- 用途：当 GitHub Actions 云端无法连接 163 SMTP 时，自动把今日简报入口和关键状态推送到飞书。
+- 需要配置：GitHub Secrets 中的 FEISHU_WEBHOOK_URL；如果飞书机器人开启签名校验，还需要 FEISHU_WEBHOOK_SECRET。GitHub Variables 可选配置 SEND_FEISHU=true/false。
 
 ## API/token 费用监控
 
@@ -358,7 +387,15 @@ async function writeDailyOutputs({ date, dailyBriefBody, businessFeedbackBody, b
   };
 }
 
-async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, library }) {
+function deliveryStatus(emailDelivery, feishuDelivery) {
+  if (emailDelivery.status === "sent") return "sent";
+  if (feishuDelivery.status === "sent") return "delivered_fallback";
+  return "draft";
+}
+
+async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, feishuDelivery, library }) {
+  const status = deliveryStatus(emailDelivery, feishuDelivery);
+
   await prependStore("dailyBriefs", {
     id: `daily-brief-${date}`,
     createdAt: timestamp,
@@ -366,7 +403,7 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
     title: `${date} 第二大脑 v4 信息简报`,
     summary: "云端 runner 已生成信息简报；实时新闻和平台数据按可用搜索/API/授权状态补充。",
     outputs: [workspacePath(paths.dailyBriefPath), workspacePath(paths.briefEmailPath), ...library.outputs],
-    status: emailDelivery.status === "sent" ? "sent" : "draft"
+    status
   });
 
   await prependStore("businessFeedback", {
@@ -376,7 +413,7 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
     title: `${date} 第二大脑 v4 业务反馈`,
     summary: "云端 runner 已生成业务反馈；达人沟通、作品流量、转化和变现指标待平台授权或导出文件补齐。",
     outputs: [workspacePath(paths.businessFeedbackPath), workspacePath(paths.feedbackEmailPath), ...library.outputs],
-    status: emailDelivery.status === "sent" ? "sent" : "draft"
+    status
   });
 
   await prependStore("knowledgeItems", [
@@ -429,7 +466,7 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
       workspacePath(paths.maintenanceReportPath),
       ...library.outputs
     ],
-    summary: "已生成每日简报、业务反馈、维护巡检、两封邮件草稿和每日简报库固定入口；若 SMTP 配置并开启发送则自动发出。",
+    summary: "已生成每日简报、业务反馈、维护巡检、两封邮件草稿和每日简报库固定入口；若 SMTP 配置并开启发送则自动发出，SMTP 不可达时尝试飞书备用交付。",
     nextAction: "优先查看 outputs/daily-brief-latest.md 或 outputs/daily-brief-index.md；如需飞书镜像，配置飞书 API 或手动复制同步包。"
   });
 }
@@ -455,7 +492,13 @@ async function runDaily() {
     ]
   });
 
-  const maintenanceReportBody = makeMaintenanceReport({ date, apiBudget, emailDelivery });
+  const feishuDelivery = await deliverFeishuFallback({
+    env: runtimeEnv,
+    emailDelivery,
+    message: makeFeishuFallbackMessage({ date, apiBudget, emailDelivery })
+  });
+
+  const maintenanceReportBody = makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery });
   const paths = await writeDailyOutputs({
     date,
     dailyBriefBody,
@@ -476,7 +519,7 @@ async function runDaily() {
     businessFeedbackBody,
     maintenanceReportBody
   });
-  await recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, library });
+  await recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, feishuDelivery, library });
 
   console.log(`Second Brain daily runner completed for ${date}`);
 }

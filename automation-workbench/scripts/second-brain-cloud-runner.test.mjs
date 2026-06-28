@@ -40,6 +40,7 @@ async function copyRunnerFixture() {
     "second-brain-cloud-runner.mjs",
     "api-budget-monitor.mjs",
     "email-delivery.mjs",
+    "feishu-delivery.mjs",
     "daily-brief-library.mjs",
     "runtime-env.mjs"
   ]) {
@@ -159,6 +160,44 @@ test("daily cloud runner records email delivery as draft-only when SMTP is not c
     assert.match(maintenanceReport, /邮件发送/);
     assert.match(maintenanceReport, /草稿模式/);
     assert.match(maintenanceReport, /SMTP 未配置/);
+    assert.match(maintenanceReport, /飞书备用交付/);
+    assert.match(maintenanceReport, /FEISHU_WEBHOOK_URL/);
+  } finally {
+    await rm(fixture.tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test("daily cloud runner sends Feishu fallback when email cannot be sent", async () => {
+  const fixture = await copyRunnerFixture();
+
+  try {
+    const result = spawnSync(process.execPath, [
+      "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+      "daily"
+    ], {
+      cwd: fixture.tmpRoot,
+      encoding: "utf8",
+      env: safeTestEnv({
+        SMTP_HOST: "smtp.invalid.local",
+        SMTP_PORT: "465",
+        SMTP_USER: "jacky060911@163.com",
+        SMTP_PASS: "secret",
+        MAIL_FROM: "jacky060911@163.com",
+        SEND_EMAIL: "true",
+        FEISHU_WEBHOOK_URL: "mock://feishu-success"
+      })
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+
+    const maintenanceReport = await readLatestMaintenanceReport(fixture);
+    assert.match(maintenanceReport, /邮件发送/);
+    assert.match(maintenanceReport, /发送失败/);
+    assert.match(maintenanceReport, /飞书备用交付/);
+    assert.match(maintenanceReport, /已发送/);
+
+    const dailyBriefs = JSON.parse(await readFile(path.join(fixture.dataDir, "daily-briefs.json"), "utf8"));
+    assert.equal(dailyBriefs[0].status, "delivered_fallback");
   } finally {
     await rm(fixture.tmpRoot, { recursive: true, force: true });
   }

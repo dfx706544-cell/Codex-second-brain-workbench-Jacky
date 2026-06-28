@@ -42,6 +42,9 @@ jobs:
           MAIL_TO_FALLBACK: "jacky060911@163.com,liu13922830178@outlook.com"
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           SEND_EMAIL: ${{ vars.SEND_EMAIL }}
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          FEISHU_WEBHOOK_SECRET: ${{ secrets.FEISHU_WEBHOOK_SECRET }}
+          SEND_FEISHU: ${{ vars.SEND_FEISHU }}
         run: node automation-workbench/scripts/second-brain-cloud-runner.mjs daily
 
       - name: Commit generated drafts

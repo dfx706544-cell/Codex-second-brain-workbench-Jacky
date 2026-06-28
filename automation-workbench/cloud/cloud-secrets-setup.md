@@ -98,6 +98,36 @@ https://github.com/dfx706544-cell/Codex-second-brain-workbench-Jacky/settings/se
 
 当前 runner 已预留环境变量，后续可以继续把实时搜索写进每日简报生成逻辑。
 
+## 飞书备用交付
+
+如果 GitHub Actions 云端无法连接 163 SMTP，可以用飞书自定义机器人作为备用交付通道。它会在邮件失败时，把今日简报入口、业务反馈入口和维护状态推送到飞书。
+
+在 GitHub Secrets 里添加：
+
+| 名称 | 用途 |
+| --- | --- |
+| `FEISHU_WEBHOOK_URL` | 飞书群自定义机器人的 Webhook 地址 |
+| `FEISHU_WEBHOOK_SECRET` | 可选；如果飞书机器人开启签名校验，就填写签名密钥 |
+
+在 GitHub Variables 里可选添加：
+
+| 名称 | 值 |
+| --- | --- |
+| `SEND_FEISHU` | `true` 开启，`false` 关闭；不填时默认开启备用交付 |
+
+飞书机器人创建路径：
+
+1. 打开飞书。
+2. 新建或选择一个只给你自己的群。
+3. 群设置。
+4. 群机器人。
+5. 添加机器人。
+6. 选择“自定义机器人”。
+7. 复制 Webhook 地址，填入 GitHub Secret `FEISHU_WEBHOOK_URL`。
+8. 如果开启“签名校验”，把签名密钥填入 `FEISHU_WEBHOOK_SECRET`。
+
+注意：Webhook 属于敏感地址，不要发到聊天框、不要写入仓库文件，只放到 GitHub Secrets。
+
 ## 手动测试云端任务
 
 进入 GitHub 仓库：
