@@ -430,3 +430,43 @@ test("bridge opens configured local app paths through an injected opener", async
     await rm(fixture.workspaceRoot, { recursive: true, force: true });
   }
 });
+
+test("bridge can trigger the local Codex queue runner in safe claim mode", async () => {
+  const fixture = await makeFixture();
+  await mkdir(path.join(fixture.workbenchRoot, "queue"), { recursive: true });
+  await writeFile(
+    path.join(fixture.workbenchRoot, "queue", "tasks.json"),
+    JSON.stringify([
+      {
+        id: "task-safe",
+        createdAt: "2026-06-28T00:00:00.000Z",
+        userText: "帮我整理一份 Excel 报表"
+      }
+    ], null, 2),
+    "utf8"
+  );
+  const bridge = createWorkbenchBridge({
+    workspaceRoot: fixture.workspaceRoot,
+    workbenchRoot: fixture.workbenchRoot,
+    host: "127.0.0.1",
+    port: 0
+  });
+
+  try {
+    const { baseUrl } = await bridge.start();
+    const response = await fetch(`${baseUrl}/api/codex/run-queue`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ execute: false })
+    });
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.ok, true);
+    assert.equal(payload.status, "claimed");
+    assert.equal(payload.taskId, "task-safe");
+    assert.match(payload.prompt, /WUYIN_RUN_TASK task-safe/);
+  } finally {
+    await bridge.stop();
+    await rm(fixture.workspaceRoot, { recursive: true, force: true });
+  }
+});

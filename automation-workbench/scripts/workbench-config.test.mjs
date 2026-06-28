@@ -170,6 +170,19 @@ test("queue execution command is self-contained and backend-first", async () => 
   }
 });
 
+test("workbench exposes a compact Codex queue command", async () => {
+  const config = await loadWorkbenchConfig();
+  const html = await readFile(new URL("../app/index.html", import.meta.url), "utf8");
+  const appSource = await readFile(new URL("../app/app.js", import.meta.url), "utf8");
+
+  assert.equal(config.WORKBENCH_PROMPTS.compactQueueCommand, "WUYIN_RUN_QUEUE latest");
+  assert.match(appSource, /compactQueueCommand/);
+  assert.match(appSource, /copyCompactQueueCommandButton/);
+  assert.match(appSource, /\/api\/codex\/run-queue/);
+  assert.match(html, /id="copyCompactQueueCommandButton"/);
+  assert.match(html, /id="handoffCodexButton"/);
+});
+
 test("workbench includes a maintenance assistant for platform and automation health", async () => {
   const config = await loadWorkbenchConfig();
   const modules = new Map(config.WORKBENCH_MODULES.map((module) => [module.id, module]));

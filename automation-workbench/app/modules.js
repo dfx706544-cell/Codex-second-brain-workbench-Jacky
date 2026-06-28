@@ -215,6 +215,7 @@ window.ASSISTANT_ROUTING = {
 };
 
 window.WORKBENCH_PROMPTS = {
+  compactQueueCommand: "WUYIN_RUN_QUEUE latest",
   queueCommand: `请打开我们制作的第二大脑自动化工作台并处理执行队列。
 
 工作区路径：C:\\Users\\嘉十一\\Documents\\Codex\\2026-06-24\\w

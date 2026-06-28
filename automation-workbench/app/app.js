@@ -9,6 +9,7 @@ const copyBriefPromptButton = document.querySelector("#copyBriefPromptButton");
 const copyCreatorPromptButton = document.querySelector("#copyCreatorPromptButton");
 const copyInboxPromptButton = document.querySelector("#copyInboxPromptButton");
 const copyKnowledgePromptButton = document.querySelector("#copyKnowledgePromptButton");
+const copyCompactQueueCommandButton = document.querySelector("#copyCompactQueueCommandButton");
 const copyLatestTaskButton = document.querySelector("#copyLatestTaskButton");
 const copyCloudWorkbenchButton = document.querySelector("#copyCloudWorkbenchButton");
 const copyPersonalWorkbenchPromptButton = document.querySelector("#copyPersonalWorkbenchPromptButton");
@@ -19,6 +20,7 @@ const bridgeStatus = document.querySelector("#bridgeStatus");
 const dailyDeliveryBoard = document.querySelector("#dailyDeliveryBoard");
 const historyFilter = document.querySelector("#historyFilter");
 const historyList = document.querySelector("#historyList");
+const handoffCodexButton = document.querySelector("#handoffCodexButton");
 const knowledgeFilter = document.querySelector("#knowledgeFilter");
 const knowledgeList = document.querySelector("#knowledgeList");
 const moduleGrid = document.querySelector("#moduleGrid");
@@ -522,15 +524,24 @@ function showToast(text) {
 
 async function copyText(text, label = "已复制") {
   if (!text) return;
-  if (navigator.clipboard) {
-    await navigator.clipboard.writeText(text);
-  } else {
-    const area = document.createElement("textarea");
-    area.value = text;
-    document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
+  let copied = false;
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  area.style.top = "0";
+  document.body.appendChild(area);
+  area.focus();
+  area.select();
+  try {
+    copied = document.execCommand("copy");
+  } finally {
     area.remove();
+  }
+
+  if (!copied && navigator.clipboard) {
+    await navigator.clipboard.writeText(text);
   }
   showToast(label);
 }
@@ -628,6 +639,36 @@ async function openWorkbenchSource(sourceId) {
   }
 
   window.open(source.url, "_blank", "noopener");
+}
+
+async function handoffQueueToCodex() {
+  if (!bridgeConnected || isCloudShareMode()) {
+    await copyText(window.WORKBENCH_PROMPTS.compactQueueCommand, "已复制极简口令");
+    showToast("未连接本地桥接，已复制极简口令");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${bridgeBaseUrl}/api/codex/run-queue`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ execute: false })
+    });
+    if (!response.ok) throw new Error(`Codex handoff failed: ${response.status}`);
+    const result = await response.json();
+    if (result.status === "claimed") {
+      await copyText(result.prompt, "已生成 Codex 执行提示");
+      showToast("已认领安全任务，并复制 Codex 执行提示");
+      await loadOperationsStatus();
+      renderQueue();
+    } else {
+      await copyText(window.WORKBENCH_PROMPTS.compactQueueCommand, "已复制极简口令");
+      showToast("没有可后台执行的安全任务，已复制极简口令");
+    }
+  } catch {
+    await copyText(window.WORKBENCH_PROMPTS.compactQueueCommand, "已复制极简口令");
+    showToast("自动交接失败，已复制极简口令");
+  }
 }
 
 function buildTaskObject() {
@@ -890,8 +931,14 @@ copyAllTasksButton.addEventListener("click", async () => {
   await copyText(allTasksText(), "已复制全部任务");
 });
 
+handoffCodexButton?.addEventListener("click", handoffQueueToCodex);
+
 copyQueueCommandButton.addEventListener("click", async () => {
   await copyText(window.WORKBENCH_PROMPTS.queueCommand, "已复制队列执行口令");
+});
+
+copyCompactQueueCommandButton?.addEventListener("click", async () => {
+  await copyText(window.WORKBENCH_PROMPTS.compactQueueCommand, "已复制极简口令");
 });
 
 copyCloudWorkbenchButton?.addEventListener("click", async () => {

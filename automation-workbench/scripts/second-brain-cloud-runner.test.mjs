@@ -24,6 +24,7 @@ function safeTestEnv(overrides = {}) {
     MAIL_TO: "",
     MAIL_FROM: "",
     SEND_EMAIL: "false",
+    WORKBENCH_DISABLE_USER_ENV_FALLBACK: "true",
     ...overrides
   };
 }
@@ -39,7 +40,8 @@ async function copyRunnerFixture() {
     "second-brain-cloud-runner.mjs",
     "api-budget-monitor.mjs",
     "email-delivery.mjs",
-    "daily-brief-library.mjs"
+    "daily-brief-library.mjs",
+    "runtime-env.mjs"
   ]) {
     await copyFile(
       path.join(WORKSPACE_ROOT, "automation-workbench", "scripts", scriptName),

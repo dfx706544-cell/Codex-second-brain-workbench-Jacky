@@ -11,7 +11,7 @@
     "timezone": "Asia/Shanghai",
     "briefName": "每日金融业务与自媒体信息简报",
     "emailRecipient": "jacky060911@163.com",
-    "deliveryMode": "email_draft_and_outputs_files",
+    "deliveryMode": "email_draft_outputs_files_and_feishu_mirror",
     "topics": [
       "US stock market",
       "Hong Kong stock market",
@@ -75,6 +75,15 @@
       "webUrl": "https://mail.163.com/",
       "sendMode": "manual_confirmation_or_configured_secure_sender",
       "noPasswordInChat": true
+    },
+    "dailyBriefLibrary": {
+      "primary": "outputs/daily-brief-latest.md",
+      "businessFeedback": "outputs/business-feedback-latest.md",
+      "syncPack": "outputs/daily-brief-sync-pack-latest.md",
+      "feishuDocTitle": "无垠每日信息简报库",
+      "feishuDocUrl": "https://my.feishu.cn/docx/WHpmdesCeoiaRVxOBhaczvFjnMh",
+      "status": "created_private_doc_manual_mirror_ready",
+      "note": "邮件不可用时，优先查看 outputs/ 固定入口；飞书文档可作为人工或 API 授权后的镜像入口。"
     },
     "social": {
       "sendMode": "draft_first_confirm_before_send",
@@ -145,8 +154,9 @@
       {
         "name": "Feishu",
         "url": "https://www.feishu.cn/messenger/",
+        "appPath": "C:\\Users\\嘉十一\\AppData\\Local\\Feishu\\Feishu.exe",
         "enabled": true,
-        "purpose": "Work messages and customer communication drafts"
+        "purpose": "Work messages, customer communication drafts, and daily brief mirror"
       },
       {
         "name": "WeChat",

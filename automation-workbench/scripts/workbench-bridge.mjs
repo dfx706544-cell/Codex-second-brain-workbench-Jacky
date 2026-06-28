@@ -5,6 +5,7 @@ import { access, mkdir, readFile, readdir, rename, stat, writeFile } from "node:
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import vm from "node:vm";
+import { runOnce } from "./workbench-codex-runner.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_WORKBENCH_ROOT = path.dirname(SCRIPT_DIR);
@@ -12,6 +13,9 @@ const DEFAULT_WORKSPACE_ROOT = path.dirname(DEFAULT_WORKBENCH_ROOT);
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8787;
 const DEFAULT_PORT_FALLBACK_ATTEMPTS = 20;
+const DEFAULT_CODEX_BIN = process.platform === "win32"
+  ? path.join(process.env.USERPROFILE || "", ".codex", ".sandbox-bin", "codex.exe")
+  : "codex";
 
 const MIME_TYPES = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -575,6 +579,20 @@ function createWorkbenchBridge(options = {}) {
         url: platform.url,
         appPath: platform.appPath
       });
+      return;
+    }
+
+    if (url.pathname === "/api/codex/run-queue" && req.method === "POST") {
+      const body = await readRequestBody(req);
+      const payload = body.trim() ? JSON.parse(body) : {};
+      const result = await runOnce({
+        queuePath,
+        workspaceRoot,
+        execute: payload.execute === true,
+        allowSensitive: payload.allowSensitive === true,
+        codexBin: payload.codexBin || DEFAULT_CODEX_BIN
+      });
+      jsonResponse(res, 200, { ok: true, ...result });
       return;
     }
 

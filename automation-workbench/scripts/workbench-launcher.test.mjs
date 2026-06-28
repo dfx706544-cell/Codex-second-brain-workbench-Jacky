@@ -75,3 +75,14 @@ test("open-workbench starts the old-port alias helper", async () => {
   assert.match(source, /Start-WorkbenchPortAlias/);
   assert.match(source, /8788,8800/);
 });
+
+test("codex queue runner launcher supports safe watch mode", async () => {
+  const source = await readFile(new URL("./start-codex-queue-runner.ps1", import.meta.url), "utf8");
+
+  assert.match(source, /workbench-codex-runner\.mjs/);
+  assert.match(source, /\[switch\]\$Watch/);
+  assert.match(source, /\[switch\]\$Execute/);
+  assert.match(source, /\[switch\]\$AllowSensitive/);
+  assert.match(source, /--queue/);
+  assert.match(source, /--workspace/);
+});

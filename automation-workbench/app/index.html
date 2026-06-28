@@ -16,6 +16,7 @@
     <div class="top-actions">
       <button class="ghost" id="openWorkspaceButton" type="button">打开项目目录</button>
       <button class="ghost" id="copyCloudWorkbenchButton" type="button">一键复制我的工作台</button>
+      <button class="ghost" id="copyCompactQueueCommandButton" type="button">复制极简口令</button>
       <button class="primary" id="copyQueueCommandButton" type="button">复制队列执行口令</button>
     </div>
   </header>
@@ -29,11 +30,11 @@
       <div class="mode-list" aria-label="执行方式">
         <div>
           <strong>当前模式</strong>
-          <span>工作台排队，Codex 执行，数据沉淀，外发前确认</span>
+          <span>工作台排队，极简口令唤起 Codex，数据沉淀，外发前确认</span>
         </div>
         <div>
-          <strong>后台成长</strong>
-          <span>Codex 自动化定时生成简报、业务反馈和自我迭代审计</span>
+          <strong>提速入口</strong>
+          <span>本地 runner 可监听安全任务并交给 Codex CLI；敏感任务默认停下确认</span>
         </div>
       </div>
     </section>
@@ -151,6 +152,7 @@
         <div class="queue-actions">
           <button class="primary" id="copyLatestTaskButton" type="button">复制最新任务</button>
           <button class="ghost" id="copyAllTasksButton" type="button">复制全部任务</button>
+          <button class="ghost" id="handoffCodexButton" type="button">交给 Codex</button>
         </div>
       </aside>
     </section>

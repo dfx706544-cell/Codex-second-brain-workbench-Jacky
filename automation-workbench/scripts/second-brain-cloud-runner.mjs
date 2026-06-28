@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { checkApiBudget } from "./api-budget-monitor.mjs";
 import { updateDailyBriefLibrary } from "./daily-brief-library.mjs";
 import { deliverDraftEmails, getMailRecipients } from "./email-delivery.mjs";
+import { loadRuntimeEnv } from "./runtime-env.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKBENCH_ROOT = path.dirname(SCRIPT_DIR);
@@ -105,6 +106,8 @@ function recipientLine(env = process.env) {
   });
   return recipients.length ? recipients.join(", ") : DEFAULT_RECIPIENTS.join(", ");
 }
+
+const runtimeEnv = loadRuntimeEnv();
 
 function makeTaskCostSection({ apiBudget }) {
   return `## 预计任务执行成本
@@ -434,7 +437,7 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
 async function runDaily() {
   const date = todayInShanghai();
   const timestamp = nowIso();
-  const apiBudget = await checkApiBudget();
+  const apiBudget = await checkApiBudget({ env: runtimeEnv });
 
   const dailyBriefBody = makeDailyBrief({ date, apiBudget });
   const businessFeedbackBody = makeBusinessFeedback({ date });
@@ -443,8 +446,8 @@ async function runDaily() {
 
   const emailDelivery = await deliverDraftEmails({
     env: {
-      ...process.env,
-      MAIL_TO_FALLBACK: process.env.MAIL_TO_FALLBACK || DEFAULT_RECIPIENTS.join(",")
+      ...runtimeEnv,
+      MAIL_TO_FALLBACK: runtimeEnv.MAIL_TO_FALLBACK || DEFAULT_RECIPIENTS.join(",")
     },
     drafts: [
       { kind: "daily brief", subject: briefDraft.subject, body: briefDraft.body },
