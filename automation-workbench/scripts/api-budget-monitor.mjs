@@ -7,6 +7,13 @@ function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function cleanEnvString(value) {
+  return String(value || "")
+    .replace(/\uFEFF/g, "")
+    .replace(/[\r\n\t]/g, "")
+    .trim();
+}
+
 function getPathValue(object, pathExpression) {
   if (!pathExpression) return undefined;
   return pathExpression.split(".").reduce((current, key) => {
@@ -78,12 +85,12 @@ function makeStatus({ provider, thresholdCny, remainingCny, sourceName, checkedA
 }
 
 function buildAuthHeader(env) {
-  const key = env.MICU_API_KEY || env.MICU_API_TOKEN || "";
+  const key = cleanEnvString(env.MICU_API_KEY || env.MICU_API_TOKEN || "");
   if (!key) return {};
 
-  const headerName = env.MICU_API_AUTH_HEADER || "Authorization";
-  const scheme = env.MICU_API_AUTH_SCHEME ?? "Bearer";
-  const value = scheme.trim() ? `${scheme.trim()} ${key}` : key;
+  const headerName = cleanEnvString(env.MICU_API_AUTH_HEADER || "Authorization");
+  const scheme = cleanEnvString(env.MICU_API_AUTH_SCHEME ?? "Bearer");
+  const value = scheme ? `${scheme} ${key}` : key;
   return { [headerName]: value };
 }
 
@@ -103,8 +110,8 @@ export async function checkApiBudget({ env = process.env, fetchImpl = globalThis
     });
   }
 
-  const balanceUrl = env.MICU_API_BALANCE_URL || env.MICU_API_BILLING_URL || "";
-  const hasSecret = Boolean(env.MICU_API_KEY || env.MICU_API_TOKEN);
+  const balanceUrl = cleanEnvString(env.MICU_API_BALANCE_URL || env.MICU_API_BILLING_URL || "");
+  const hasSecret = Boolean(cleanEnvString(env.MICU_API_KEY || env.MICU_API_TOKEN));
   if (!balanceUrl || !hasSecret) {
     return {
       provider,

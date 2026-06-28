@@ -49,3 +49,31 @@ test("Micu API budget monitor reads balance from configured JSON path", async ()
   assert.match(result.sources[0], /data\.remaining_cny/);
   assert.match(result.message, /高于 50 元人民币提醒线/);
 });
+
+test("Micu API budget monitor strips hidden characters from URL and auth header", async () => {
+  let requestedUrl = "";
+  let requestedHeaders = {};
+
+  const result = await checkApiBudget({
+    env: {
+      MICU_API_BALANCE_URL: "\uFEFFhttps://example.test/api/balance\n",
+      MICU_API_KEY: "\uFEFFsecret-key\r\n",
+      MICU_API_AUTH_HEADER: "\uFEFFAuthorization\n",
+      MICU_API_AUTH_SCHEME: "\uFEFFBearer\n",
+      MICU_API_BALANCE_JSON_PATH: "data.total_available"
+    },
+    fetchImpl: async (url, options) => {
+      requestedUrl = url;
+      requestedHeaders = options.headers;
+      return {
+        ok: true,
+        json: async () => ({ data: { total_available: "188.8" } })
+      };
+    }
+  });
+
+  assert.equal(requestedUrl, "https://example.test/api/balance");
+  assert.equal(requestedHeaders.Authorization, "Bearer secret-key");
+  assert.equal(result.status, "ok");
+  assert.equal(result.remainingCny, 188.8);
+});

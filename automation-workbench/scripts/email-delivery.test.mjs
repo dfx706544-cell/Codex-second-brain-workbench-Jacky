@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getEmailDeliveryStatus, getMailRecipients } from "./email-delivery.mjs";
+import { getEmailDeliveryStatus, getMailRecipients, sendSmtpMail } from "./email-delivery.mjs";
 
 const MOJIBAKE_PATTERN = /鏈|閭|绋|俙|€|�/;
 
@@ -83,4 +83,63 @@ test("email delivery accepts fallback recipients for cloud automation", () => {
     "jacky060911@163.com",
     "liu13922830178@outlook.com"
   ]);
+});
+
+test("email delivery strips hidden characters before SMTP auth", async () => {
+  const writes = [];
+  const responses = [
+    "220 smtp.test ESMTP ready\r\n",
+    "250 smtp.test\r\n",
+    "334 VXNlcm5hbWU6\r\n",
+    "334 UGFzc3dvcmQ6\r\n",
+    "235 Authentication successful\r\n",
+    "250 Mail OK\r\n",
+    "250 Recipient OK\r\n",
+    "354 End data with <CR><LF>.<CR><LF>\r\n",
+    "250 Message accepted\r\n",
+    "221 Bye\r\n"
+  ];
+
+  const fakeSocket = {
+    write(text) {
+      writes.push(text);
+      queueMicrotask(() => this.handlers.data?.(Buffer.from(responses.shift(), "utf8")));
+    },
+    on(event, handler) {
+      this.handlers[event] = handler;
+      if (event === "data" && writes.length === 0) {
+        queueMicrotask(() => this.handlers.data?.(Buffer.from(responses.shift(), "utf8")));
+      }
+      return this;
+    },
+    once(event, handler) {
+      this.handlers[event] = handler;
+      return this;
+    },
+    off(event) {
+      delete this.handlers[event];
+      return this;
+    },
+    end() {},
+    handlers: {}
+  };
+
+  await sendSmtpMail({
+    env: {
+      SMTP_HOST: "smtp.test",
+      SMTP_PORT: "465",
+      SMTP_USER: "\uFEFFjacky060911@163.com\n",
+      SMTP_PASS: "\uFEFFauth-code\r\n",
+      MAIL_TO: "jacky060911@163.com",
+      MAIL_FROM: "\uFEFFjacky060911@163.com\n",
+      SMTP_SECURE: "true"
+    },
+    subject: "测试",
+    body: "测试内容",
+    connectImpl: async () => fakeSocket
+  });
+
+  assert.ok(writes.includes(`${Buffer.from("jacky060911@163.com", "utf8").toString("base64")}\r\n`));
+  assert.ok(writes.includes(`${Buffer.from("auth-code", "utf8").toString("base64")}\r\n`));
+  assert.ok(writes.includes("MAIL FROM:<jacky060911@163.com>\r\n"));
 });

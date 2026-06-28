@@ -15,10 +15,17 @@ function normalizeLines(value) {
   return String(value || "").replace(/\r?\n/g, "\r\n");
 }
 
+function cleanEnvString(value) {
+  return String(value || "")
+    .replace(/\uFEFF/g, "")
+    .replace(/[\r\n\t]/g, "")
+    .trim();
+}
+
 export function getMailRecipients(env = process.env) {
   return String(env.MAIL_TO || env.MAIL_TO_FALLBACK || "")
     .split(/[;,]/)
-    .map((item) => item.trim())
+    .map((item) => cleanEnvString(item))
     .filter(Boolean);
 }
 
@@ -107,21 +114,23 @@ export function getEmailDeliveryStatus({ env = process.env } = {}) {
   };
 }
 
-export async function sendSmtpMail({ env = process.env, subject, body }) {
-  const host = env.SMTP_HOST;
+export async function sendSmtpMail({ env = process.env, subject, body, connectImpl = connectSmtp }) {
+  const host = cleanEnvString(env.SMTP_HOST);
   const port = Number(env.SMTP_PORT || 465);
   const secure = env.SMTP_SECURE ? enabled(env.SMTP_SECURE) : port === 465;
-  const from = env.MAIL_FROM;
+  const from = cleanEnvString(env.MAIL_FROM);
+  const username = cleanEnvString(env.SMTP_USER);
+  const password = cleanEnvString(env.SMTP_PASS);
   const recipients = getMailRecipients(env);
   const to = recipients.join(", ");
-  const socket = await connectSmtp({ host, port, secure });
+  const socket = await connectImpl({ host, port, secure });
 
   try {
     await command(socket, "", "220");
     await command(socket, `EHLO ${env.SMTP_EHLO_DOMAIN || "second-brain-workbench.local"}`, "250");
     await command(socket, "AUTH LOGIN", "334");
-    await command(socket, Buffer.from(env.SMTP_USER, "utf8").toString("base64"), "334");
-    await command(socket, Buffer.from(env.SMTP_PASS, "utf8").toString("base64"), "235");
+    await command(socket, Buffer.from(username, "utf8").toString("base64"), "334");
+    await command(socket, Buffer.from(password, "utf8").toString("base64"), "235");
     await command(socket, `MAIL FROM:<${from}>`, "250");
     for (const recipient of recipients) {
       await command(socket, `RCPT TO:<${recipient}>`, "250");
