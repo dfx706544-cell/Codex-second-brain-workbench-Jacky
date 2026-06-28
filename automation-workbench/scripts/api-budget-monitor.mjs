@@ -131,11 +131,12 @@ function isPlausibleQuota(value) {
 
 function makeTokenUsageStatus({ provider, thresholdCny, tokenUsage, sourceName, checkedAt }) {
   const quotaText = tokenUsage.unlimitedQuota
-    ? "无限额度"
+    ? "不限额/订阅口径"
     : `${tokenUsage.totalAvailable.toLocaleString("zh-CN")} 额度单位`;
-  const grantedText = tokenUsage.totalGranted === null ? "未知" : tokenUsage.totalGranted.toLocaleString("zh-CN");
-  const usedText = tokenUsage.totalUsed === null ? "未知" : tokenUsage.totalUsed.toLocaleString("zh-CN");
-  const base = `${provider} 当前 API key 剩余额度为 ${quotaText}（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；总授予 ${grantedText}，已用 ${usedText}。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 ${thresholdCny} 元人民币的充值提醒暂未自动启用。`;
+  const diagnostics = tokenUsage.unlimitedQuota
+    ? "平台同时返回的 total_granted/total_used 仅作为诊断字段，不按人民币余额解读。"
+    : `总授予 ${tokenUsage.totalGranted === null ? "未知" : tokenUsage.totalGranted.toLocaleString("zh-CN")}，已用 ${tokenUsage.totalUsed === null ? "未知" : tokenUsage.totalUsed.toLocaleString("zh-CN")}。`;
+  const base = `${provider} 当前 API key 剩余额度为 ${quotaText}（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；${diagnostics}人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 ${thresholdCny} 元人民币的充值提醒暂未自动启用。`;
 
   return {
     provider,

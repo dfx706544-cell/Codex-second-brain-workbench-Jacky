@@ -157,3 +157,32 @@ test("Micu API budget monitor flags exhausted New API token usage without treati
   assert.match(result.message, /key 配额已不足或为负/);
   assert.doesNotMatch(result.message, /低于 50 元人民币，请尽快充值/);
 });
+
+test("Micu API budget monitor explains unlimited New API quota without exposing confusing granted totals as balance", async () => {
+  const result = await checkApiBudget({
+    env: {
+      MICU_API_PROVIDER_NAME: "米醋 API",
+      MICU_API_BALANCE_URL: "https://www.micuapi.ai/api/usage/token",
+      MICU_API_KEY: "secret",
+      MICU_API_BALANCE_JSON_PATH: "data.total_available"
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        data: {
+          object: "token_usage",
+          total_granted: -336973,
+          total_used: 682609002,
+          total_available: -673487015,
+          unlimited_quota: true
+        }
+      })
+    })
+  });
+
+  assert.equal(result.status, "quota_ok");
+  assert.equal(result.currencyVerified, false);
+  assert.match(result.message, /不限额\/订阅口径/);
+  assert.match(result.message, /仅作为诊断字段/);
+  assert.doesNotMatch(result.message, /总授予 -336,973/);
+});
