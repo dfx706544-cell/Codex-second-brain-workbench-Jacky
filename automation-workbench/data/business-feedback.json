@@ -1,5 +1,22 @@
 [
   {
+    "id": "business-feedback-2026-06-28",
+    "createdAt": "2026-06-28T07:54:27.156Z",
+    "date": "2026-06-28",
+    "title": "2026-06-28 第二大脑 v4 业务反馈",
+    "summary": "云端 runner 已生成业务反馈；达人沟通、作品流量、转化和变现指标待平台授权或导出文件补齐。",
+    "outputs": [
+      "outputs/business-feedback-2026-06-28.md",
+      "outputs/email-draft-business-feedback-2026-06-28.md",
+      "outputs/daily-brief-latest.md",
+      "outputs/business-feedback-latest.md",
+      "outputs/daily-brief-sync-pack-2026-06-28.md",
+      "outputs/daily-brief-sync-pack-latest.md",
+      "outputs/daily-brief-index.md"
+    ],
+    "status": "draft"
+  },
+  {
     "id": "business-feedback-2026-06-27",
     "createdAt": "2026-06-27T09:19:30.449Z",
     "date": "2026-06-27",
