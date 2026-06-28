@@ -1,8 +1,8 @@
 [
   {
     "id": "history-2026-06-28-daily-automation",
-    "createdAt": "2026-06-28T07:54:27.156Z",
-    "completedAt": "2026-06-28T07:54:27.156Z",
+    "createdAt": "2026-06-28T08:15:18.748Z",
+    "completedAt": "2026-06-28T08:15:18.748Z",
     "category": "system",
     "userText": "执行第二大脑 v4 每日信息简报、业务反馈、维护巡检和邮件交付链路",
     "primaryAssistant": "资讯助手",
@@ -18,7 +18,7 @@
     ],
     "sources": [
       "local runner",
-      "https://www.micuapi.ai/api/usage/token"
+      "https://www.micuapi.ai/api/usage/token#data.total_available"
     ],
     "status": "completed",
     "outputs": [
