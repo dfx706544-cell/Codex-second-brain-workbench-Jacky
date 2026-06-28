@@ -8,7 +8,7 @@
 # 第二大脑 v4 每日信息简报
 
 日期：2026-06-28
-收录时间：2026/6/28 16:22:52 Asia/Shanghai
+收录时间：2026/6/28 16:28:08 Asia/Shanghai
 交付状态：云端轻量草稿；真实邮件发送取决于 SMTP/邮箱连接器配置
 
 ## 今日最重要消息
@@ -48,7 +48,7 @@
 
 ## API/token 费用提醒
 
-- 余额监控失败：读取到的余额字段异常（data.total_available=-660344274），未将其当作真实人民币余额；请配置正确的 MICU_API_BALANCE_JSON_PATH。
+- 余额监控失败：读取到的余额字段异常（data.total_available=-664080523），未将其当作真实人民币余额；请配置正确的 MICU_API_BALANCE_JSON_PATH。
 
 ## 预计任务执行成本
 
@@ -56,7 +56,7 @@
 - LLM/API/token：取决于是否调用米促 API、OpenAI/Codex、AnySearch 或其他模型服务；未读取到真实账单接口前，只能标注待核实，不编造金额。
 - 邮件发送：使用 163 SMTP 发送到白名单邮箱通常不另收 SMTP 费用，但邮箱服务策略、发送频率和失败重试需持续观察。
 - 第三方平台订阅：Kalodata、FastMoss、达秘/TikClubs、剪映、数据源或代理等费用独立于工作台，需要按各平台套餐核算。
-- 余额提醒：余额监控失败：读取到的余额字段异常（data.total_available=-660344274），未将其当作真实人民币余额；请配置正确的 MICU_API_BALANCE_JSON_PATH。
+- 余额提醒：余额监控失败：读取到的余额字段异常（data.total_available=-664080523），未将其当作真实人民币余额；请配置正确的 MICU_API_BALANCE_JSON_PATH。
 
 ## 结构化报表建议
 
