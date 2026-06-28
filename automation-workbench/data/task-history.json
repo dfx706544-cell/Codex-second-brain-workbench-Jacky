@@ -1,8 +1,8 @@
 [
   {
     "id": "history-2026-06-28-daily-automation",
-    "createdAt": "2026-06-28T08:28:08.640Z",
-    "completedAt": "2026-06-28T08:28:08.640Z",
+    "createdAt": "2026-06-28T08:43:57.940Z",
+    "completedAt": "2026-06-28T08:43:57.940Z",
     "category": "system",
     "userText": "执行第二大脑 v4 每日信息简报、业务反馈、维护巡检和邮件交付链路",
     "primaryAssistant": "资讯助手",
@@ -33,7 +33,7 @@
       "outputs/daily-brief-sync-pack-latest.md",
       "outputs/daily-brief-index.md"
     ],
-    "summary": "已生成每日简报、业务反馈、维护巡检、两封邮件草稿和每日简报库固定入口；若 SMTP 配置并开启发送则自动发出。",
+    "summary": "已生成每日简报、业务反馈、维护巡检、两封邮件草稿和每日简报库固定入口；若 SMTP 配置并开启发送则自动发出，SMTP 不可达时尝试飞书备用交付。",
     "nextAction": "优先查看 outputs/daily-brief-latest.md 或 outputs/daily-brief-index.md；如需飞书镜像，配置飞书 API 或手动复制同步包。"
   },
   {
