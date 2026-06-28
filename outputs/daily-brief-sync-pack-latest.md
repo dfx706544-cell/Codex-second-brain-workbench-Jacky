@@ -8,7 +8,7 @@
 # 第二大脑 v4 每日信息简报
 
 日期：2026-06-28
-收录时间：2026/6/28 17:10:56 Asia/Shanghai
+收录时间：2026/6/28 18:13:15 Asia/Shanghai
 交付状态：云端轻量草稿；真实邮件发送取决于 SMTP/邮箱连接器配置
 
 ## 今日最重要消息
@@ -159,7 +159,7 @@
 | --- | --- | --- |
 | outputs/ 写入 | 已检查 | runner 会写入每日简报、业务反馈、维护报告和邮件草稿 |
 | 数据中心 JSON | 已检查 | runner 会更新 automation-workbench/data/ |
-| 邮件发送 | 已发送 | 已发送 2 封邮件到 jacky060911@163.com, liu13922830178@outlook.com。 |
+| 邮件发送 | 发送失败 | 邮件发送遇到错误：daily brief: AggregateError ETIMEDOUT; business feedback: AggregateError ETIMEDOUT |
 | 飞书备用交付 | 待配置 | 飞书备用交付未配置：缺少 FEISHU_WEBHOOK_URL。 |
 | API/token 费用 | 额度正常 | 米醋 API 当前 API key 剩余额度为 不限额/订阅口径（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；平台同时返回的 total_granted/total_used 仅作为诊断字段，不按人民币余额解读。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 50 元人民币的充值提醒暂未自动启用。 |
 | 平台真实接入 | 待本机/待登录核实 | 需要开机、登录态、API 或导出文件 |
