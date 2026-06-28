@@ -16,7 +16,7 @@
 | 数据中心 JSON | 已检查 | runner 会更新 automation-workbench/data/ |
 | 邮件发送 | 已发送 | 已发送 2 封邮件到 jacky060911@163.com, liu13922830178@outlook.com。 |
 | 飞书备用交付 | 待配置 | 飞书备用交付未配置：缺少 FEISHU_WEBHOOK_URL。 |
-| API/token 费用 | 额度正常 | 米醋 API 当前 API key 剩余额度为 无限额度（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；总授予 -336,973，已用 682,609,002。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 50 元人民币的充值提醒暂未自动启用。 |
+| API/token 费用 | 额度正常 | 米醋 API 当前 API key 剩余额度为 不限额/订阅口径（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；平台同时返回的 total_granted/total_used 仅作为诊断字段，不按人民币余额解读。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 50 元人民币的充值提醒暂未自动启用。 |
 | 平台真实接入 | 待本机/待登录核实 | 需要开机、登录态、API 或导出文件 |
 | 金融交易 | 安全模式 | 只做资讯、提醒、纸面交易和人工确认前检查 |
 | 社交/邮件外发 | 条件执行 | 邮件可在 SMTP 配置后自动发；社交外发仍建议人工确认 |
@@ -36,14 +36,14 @@
 ## API/token 费用监控
 
 - 提醒线：50 元人民币。
-- 当前状态：米醋 API 当前 API key 剩余额度为 无限额度（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；总授予 -336,973，已用 682,609,002。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 50 元人民币的充值提醒暂未自动启用。
+- 当前状态：米醋 API 当前 API key 剩余额度为 不限额/订阅口径（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；平台同时返回的 total_granted/total_used 仅作为诊断字段，不按人民币余额解读。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 50 元人民币的充值提醒暂未自动启用。
 - 若需要自动读取米促 API 真实余额，需要配置 MICU_API_BALANCE_URL、MICU_API_KEY 或 MICU_API_TOKEN，以及必要时的 MICU_API_BALANCE_JSON_PATH。
 
 ## 运行与维护成本
 
 | 成本项 | 当前判断 | 说明 |
 | --- | --- | --- |
-| 米促 API/token | 额度正常 | 米醋 API 当前 API key 剩余额度为 无限额度（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；总授予 -336,973，已用 682,609,002。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 50 元人民币的充值提醒暂未自动启用。 |
+| 米促 API/token | 额度正常 | 米醋 API 当前 API key 剩余额度为 不限额/订阅口径（New API token_usage，可核实 key 配额，但不是钱包人民币余额）；平台同时返回的 total_granted/total_used 仅作为诊断字段，不按人民币余额解读。人民币余额仍需配置钱包/账单接口或 MICU_API_BALANCE_CNY，低于 50 元人民币的充值提醒暂未自动启用。 |
 | GitHub Actions / 云端任务 | 待账单核实 | 若在免费额度内通常为 0 元人民币；超出后以 GitHub 账号账单为准。 |
 | Codex / OpenAI 调用 | 待账单核实 | 取决于模型、token、工具调用和自动化频率；每次复杂任务开始前应先给出预计人民币成本区间。 |
 | 163 SMTP 邮件 | 预计 0 元人民币 | 只发送到已配置白名单邮箱；真实可用性以 SMTP 发送结果为准。 |
