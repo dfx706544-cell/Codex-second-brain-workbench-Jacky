@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getEmailDeliveryStatus, getMailRecipients, sendSmtpMail } from "./email-delivery.mjs";
+import { deliverDraftEmails, getEmailDeliveryStatus, getMailRecipients, sendSmtpMail } from "./email-delivery.mjs";
 
 const MOJIBAKE_PATTERN = /鏈|閭|绋|俙|€|�/;
 
@@ -142,4 +142,28 @@ test("email delivery strips hidden characters before SMTP auth", async () => {
   assert.ok(writes.includes(`${Buffer.from("jacky060911@163.com", "utf8").toString("base64")}\r\n`));
   assert.ok(writes.includes(`${Buffer.from("auth-code", "utf8").toString("base64")}\r\n`));
   assert.ok(writes.includes("MAIL FROM:<jacky060911@163.com>\r\n"));
+});
+
+test("email delivery reports useful error text for empty SMTP failures", async () => {
+  const result = await deliverDraftEmails({
+    env: {
+      SMTP_HOST: "smtp.163.com",
+      SMTP_PORT: "465",
+      SMTP_USER: "jacky060911@163.com",
+      SMTP_PASS: "secret",
+      MAIL_TO: "jacky060911@163.com",
+      MAIL_FROM: "jacky060911@163.com",
+      SEND_EMAIL: "true"
+    },
+    drafts: [
+      { kind: "daily brief", subject: "测试", body: "测试" }
+    ],
+    sendImpl: async () => {
+      throw new Error("");
+    }
+  });
+
+  assert.equal(result.status, "send_error");
+  assert.match(result.failed[0].error, /Unknown SMTP delivery error/);
+  assert.match(result.message, /Unknown SMTP delivery error/);
 });

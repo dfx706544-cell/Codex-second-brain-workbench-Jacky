@@ -78,6 +78,14 @@ async function connectSmtp({ host, port, secure }) {
   });
 }
 
+function formatDeliveryError(error) {
+  if (error?.message?.trim()) return error.message.trim();
+  if (error?.code) return `${error.name || "SMTPError"} ${error.code}`;
+  if (error?.name && error.name !== "Error") return error.name;
+  const text = String(error || "").trim();
+  return text && text !== "Error" ? text : "Unknown SMTP delivery error";
+}
+
 export function getEmailDeliveryStatus({ env = process.env } = {}) {
   const missing = REQUIRED_SMTP_ENV.filter((name) => !env[name]);
   if (getMailRecipients(env).length === 0) {
@@ -144,7 +152,7 @@ export async function sendSmtpMail({ env = process.env, subject, body, connectIm
   }
 }
 
-export async function deliverDraftEmails({ env = process.env, drafts = [] } = {}) {
+export async function deliverDraftEmails({ env = process.env, drafts = [], sendImpl = sendSmtpMail } = {}) {
   const status = getEmailDeliveryStatus({ env });
   if (status.status !== "ready_to_send") {
     return {
@@ -158,12 +166,12 @@ export async function deliverDraftEmails({ env = process.env, drafts = [] } = {}
   const failed = [];
   for (const draft of drafts) {
     try {
-      await sendSmtpMail({ env, subject: draft.subject, body: draft.body });
+      await sendImpl({ env, subject: draft.subject, body: draft.body });
       sent.push(draft.kind || draft.subject);
     } catch (error) {
       failed.push({
         kind: draft.kind || draft.subject,
-        error: error.message
+        error: formatDeliveryError(error)
       });
     }
   }
