@@ -38,7 +38,8 @@ async function copyRunnerFixture() {
   for (const scriptName of [
     "second-brain-cloud-runner.mjs",
     "api-budget-monitor.mjs",
-    "email-delivery.mjs"
+    "email-delivery.mjs",
+    "daily-brief-library.mjs"
   ]) {
     await copyFile(
       path.join(WORKSPACE_ROOT, "automation-workbench", "scripts", scriptName),
@@ -181,6 +182,49 @@ test("daily cloud runner targets both fallback email recipients", async () => {
     const emailDraft = await readFile(path.join(fixture.tmpRoot, emailDraftPath), "utf8");
     assert.match(emailDraft, /jacky060911@163\.com/);
     assert.match(emailDraft, /liu13922830178@outlook\.com/);
+  } finally {
+    await rm(fixture.tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test("daily cloud runner always updates the daily brief library when email is draft-only", async () => {
+  const fixture = await copyRunnerFixture();
+
+  try {
+    const result = spawnSync(process.execPath, [
+      "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+      "daily"
+    ], {
+      cwd: fixture.tmpRoot,
+      encoding: "utf8",
+      env: safeTestEnv()
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+
+    const latestBrief = await readFile(path.join(fixture.tmpRoot, "outputs", "daily-brief-latest.md"), "utf8");
+    const latestFeedback = await readFile(path.join(fixture.tmpRoot, "outputs", "business-feedback-latest.md"), "utf8");
+    const index = await readFile(path.join(fixture.tmpRoot, "outputs", "daily-brief-index.md"), "utf8");
+    const obsidianBrief = await readFile(
+      path.join(fixture.tmpRoot, "automation-workbench", "obsidian-vault", "Daily Briefs", "最新信息简报.md"),
+      "utf8"
+    );
+    const syncPack = await readFile(
+      path.join(fixture.tmpRoot, "outputs", `daily-brief-sync-pack-${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" })}.md`),
+      "utf8"
+    );
+
+    assert.match(latestBrief, /第二大脑 v4 每日信息简报/);
+    assert.match(latestFeedback, /第二大脑 v4 业务反馈/);
+    assert.match(index, /每日简报库索引/);
+    assert.match(index, /daily-brief-latest\.md/);
+    assert.match(obsidianBrief, /第二大脑 v4 每日信息简报/);
+    assert.match(syncPack, /可复制到飞书、Notion、语雀或共享文档/);
+
+    const taskHistory = JSON.parse(await readFile(path.join(fixture.dataDir, "task-history.json"), "utf8"));
+    assert.ok(taskHistory[0].outputs.includes("outputs/daily-brief-latest.md"));
+    assert.ok(taskHistory[0].outputs.includes("outputs/daily-brief-index.md"));
+    assert.ok(taskHistory[0].outputs.some((item) => item.startsWith("outputs/daily-brief-sync-pack-")));
   } finally {
     await rm(fixture.tmpRoot, { recursive: true, force: true });
   }

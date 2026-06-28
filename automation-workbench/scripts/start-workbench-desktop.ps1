@@ -26,13 +26,16 @@ try {
     throw "open-workbench.ps1 not found: $OpenWorkbench"
   }
 
+  $OpenTimer = [Diagnostics.Stopwatch]::StartNew()
   $AppUrl = powershell -NoProfile -ExecutionPolicy Bypass -File $OpenWorkbench -NoBrowser
+  $OpenTimer.Stop()
   $AppUrl = ($AppUrl | Select-Object -Last 1).Trim()
 
   if ([string]::IsNullOrWhiteSpace($AppUrl)) {
     throw "Workbench URL was empty."
   }
 
+  Write-WorkbenchDesktopLog "Open workbench resolved in $($OpenTimer.ElapsedMilliseconds) ms."
   Write-WorkbenchDesktopLog "Resolved app URL: $AppUrl"
 
   if ($NoBrowser) {

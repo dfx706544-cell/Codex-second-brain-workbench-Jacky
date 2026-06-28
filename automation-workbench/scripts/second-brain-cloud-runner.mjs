@@ -2,6 +2,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkApiBudget } from "./api-budget-monitor.mjs";
+import { updateDailyBriefLibrary } from "./daily-brief-library.mjs";
 import { deliverDraftEmails, getMailRecipients } from "./email-delivery.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -354,14 +355,14 @@ async function writeDailyOutputs({ date, dailyBriefBody, businessFeedbackBody, b
   };
 }
 
-async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery }) {
+async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, library }) {
   await prependStore("dailyBriefs", {
     id: `daily-brief-${date}`,
     createdAt: timestamp,
     date,
     title: `${date} 第二大脑 v4 信息简报`,
     summary: "云端 runner 已生成信息简报；实时新闻和平台数据按可用搜索/API/授权状态补充。",
-    outputs: [workspacePath(paths.dailyBriefPath), workspacePath(paths.briefEmailPath)],
+    outputs: [workspacePath(paths.dailyBriefPath), workspacePath(paths.briefEmailPath), ...library.outputs],
     status: emailDelivery.status === "sent" ? "sent" : "draft"
   });
 
@@ -371,7 +372,7 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
     date,
     title: `${date} 第二大脑 v4 业务反馈`,
     summary: "云端 runner 已生成业务反馈；达人沟通、作品流量、转化和变现指标待平台授权或导出文件补齐。",
-    outputs: [workspacePath(paths.businessFeedbackPath), workspacePath(paths.feedbackEmailPath)],
+    outputs: [workspacePath(paths.businessFeedbackPath), workspacePath(paths.feedbackEmailPath), ...library.outputs],
     status: emailDelivery.status === "sent" ? "sent" : "draft"
   });
 
@@ -422,10 +423,11 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
       workspacePath(paths.businessFeedbackPath),
       workspacePath(paths.briefEmailPath),
       workspacePath(paths.feedbackEmailPath),
-      workspacePath(paths.maintenanceReportPath)
+      workspacePath(paths.maintenanceReportPath),
+      ...library.outputs
     ],
-    summary: "已生成每日简报、业务反馈、维护巡检和两封邮件草稿；若 SMTP 配置并开启发送则自动发出。",
-    nextAction: "配置云端 SMTP、AnySearch、米促 API 余额查询和平台数据授权，以提升自动化深度。"
+    summary: "已生成每日简报、业务反馈、维护巡检、两封邮件草稿和每日简报库固定入口；若 SMTP 配置并开启发送则自动发出。",
+    nextAction: "优先查看 outputs/daily-brief-latest.md 或 outputs/daily-brief-index.md；如需飞书镜像，配置飞书 API 或手动复制同步包。"
   });
 }
 
@@ -459,7 +461,19 @@ async function runDaily() {
     feedbackDraft,
     maintenanceReportBody
   });
-  await recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery });
+  const library = await updateDailyBriefLibrary({
+    workspaceRoot: WORKSPACE_ROOT,
+    workbenchRoot: WORKBENCH_ROOT,
+    outputsDir: OUTPUTS_DIR,
+    date,
+    dailyBriefPath: paths.dailyBriefPath,
+    businessFeedbackPath: paths.businessFeedbackPath,
+    maintenanceReportPath: paths.maintenanceReportPath,
+    dailyBriefBody,
+    businessFeedbackBody,
+    maintenanceReportBody
+  });
+  await recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, library });
 
   console.log(`Second Brain daily runner completed for ${date}`);
 }

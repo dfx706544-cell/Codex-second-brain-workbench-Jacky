@@ -6,12 +6,17 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $Workspace = Split-Path -Parent $Root
 $Bridge = Join-Path $Root "scripts\workbench-bridge.mjs"
+$PortAlias = Join-Path $Root "scripts\workbench-port-alias.mjs"
 $QueueDir = Join-Path $Root "queue"
 $StatusPath = Join-Path $QueueDir "bridge-status.json"
 $Node = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
 
 if (-not (Test-Path -LiteralPath $Bridge)) {
   throw "Workbench bridge not found: $Bridge"
+}
+
+if (-not (Test-Path -LiteralPath $PortAlias)) {
+  throw "Workbench port alias helper not found: $PortAlias"
 }
 
 if (-not (Test-Path -LiteralPath $Node)) {
@@ -51,6 +56,41 @@ function Get-WorkbenchBridgeHealth {
   return $null
 }
 
+function Get-StatusPort {
+  if (-not (Test-Path -LiteralPath $StatusPath)) {
+    return $null
+  }
+
+  try {
+    $Status = Get-Content -Raw -Encoding UTF8 -LiteralPath $StatusPath | ConvertFrom-Json
+    if ($Status.port) {
+      return [int]$Status.port
+    }
+  } catch {
+    return $null
+  }
+
+  return $null
+}
+
+function Start-WorkbenchPortAlias {
+  $AliasPorts = "8788,8800"
+  $ExistingAlias = Get-CimInstance Win32_Process -Filter "name = 'node.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -like "*workbench-port-alias.mjs*" -and $_.CommandLine -like "*$Root*" } |
+    Select-Object -First 1
+
+  if ($ExistingAlias) {
+    return
+  }
+
+  Start-Process -FilePath $Node -ArgumentList @(
+    $PortAlias,
+    "--host", "127.0.0.1",
+    "--ports", $AliasPorts,
+    "--workbench-root", $Root
+  ) -WorkingDirectory $Workspace -WindowStyle Hidden
+}
+
 $ExistingStatus = $null
 if (Test-Path -LiteralPath $StatusPath) {
   try {
@@ -61,7 +101,8 @@ if (Test-Path -LiteralPath $StatusPath) {
 }
 
 $AppUrl = $null
-$CandidatePorts = @(8787..8806)
+$FallbackPorts = @(8787)
+$CandidatePorts = $FallbackPorts
 if ($ExistingStatus -and $ExistingStatus.port) {
   $CandidatePorts = @([int]$ExistingStatus.port) + $CandidatePorts
 }
@@ -76,40 +117,13 @@ foreach ($Port in ($CandidatePorts | Select-Object -Unique)) {
 
 if (-not $AppUrl) {
   $StartPort = 8787
-  foreach ($Port in (8787..8806)) {
-    $TcpClient = $null
-    try {
-      $TcpClient = New-Object System.Net.Sockets.TcpClient
-      $Connection = $TcpClient.BeginConnect("127.0.0.1", $Port, $null, $null)
-      $Connected = $Connection.AsyncWaitHandle.WaitOne(100, $false)
-      if (-not $Connected) {
-        $StartPort = $Port
-        break
-      }
-      $TcpClient.EndConnect($Connection)
-    } catch {
-      $StartPort = $Port
-      break
-    } finally {
-      if ($TcpClient) {
-        $TcpClient.Close()
-      }
-    }
-  }
-
   Start-Process -FilePath $Node -ArgumentList @($Bridge, "--host", "127.0.0.1", "--port", "$StartPort") -WorkingDirectory $Workspace -WindowStyle Hidden
 
   for ($i = 0; $i -lt 30; $i++) {
-    $CandidatePorts = @(8787..8806)
-    if (Test-Path -LiteralPath $StatusPath) {
-      try {
-        $Status = Get-Content -Raw -Encoding UTF8 -LiteralPath $StatusPath | ConvertFrom-Json
-        if ($Status.port) {
-          $CandidatePorts = @([int]$Status.port) + $CandidatePorts
-        }
-      } catch {
-        $CandidatePorts = @(8787..8806)
-      }
+    $CandidatePorts = $FallbackPorts
+    $StatusPort = Get-StatusPort
+    if ($StatusPort) {
+      $CandidatePorts = @($StatusPort) + $CandidatePorts
     }
 
     foreach ($Port in ($CandidatePorts | Select-Object -Unique)) {
@@ -131,6 +145,8 @@ if (-not $AppUrl) {
 if (-not $AppUrl) {
   throw "Could not start a current automation workbench bridge with data hub support."
 }
+
+Start-WorkbenchPortAlias
 
 if ($NoBrowser) {
   Write-Output $AppUrl
