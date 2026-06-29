@@ -64,7 +64,8 @@ test("Feishu doc delivery gets tenant token and appends today's markdown to a cl
   assert.match(calls[0].url, /tenant_access_token/);
   assert.deepEqual(calls[0].body, { app_id: "cli_xxx", app_secret: "secret" });
   assert.match(calls[1].url, /documents\/doc_token\/blocks\/doc_token\/children/);
-  assert.equal(calls[1].options.headers.Authorization, "Bearer tenant-token");
+  assert.equal(calls[1].options.headers.authorization, "Bearer tenant-token");
+  assert.equal(calls[1].options.headers.Authorization, undefined);
   assert.equal(calls[1].body.children[0].block_type, 2);
   assert.match(calls[1].body.children[0].text.elements[0].text_run.content, /2026-06-29/);
 });

@@ -113,7 +113,6 @@ async function appendToFeishuDoc({ env, title, markdown, fetchImpl }) {
     method: "POST",
     headers: {
       authorization: `Bearer ${token}`,
-      Authorization: `Bearer ${token}`,
       "content-type": "application/json; charset=utf-8"
     },
     body: JSON.stringify(buildDocBlock({ title, markdown }))
