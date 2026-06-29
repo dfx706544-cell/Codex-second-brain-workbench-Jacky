@@ -53,3 +53,34 @@ GitHub 私有仓库作为中间层：
 - `outputs/`
 
 如果发现新文件，就在工作台知识库、历史记录和每日交付页面显示。
+
+## 开机后本地平台补采
+
+当电脑关机期间云端无法读取账号后台、私有平台或桌面软件数据时，开机后执行补采。
+
+补采来源：
+
+- 已登录且用户授权可见的平台页面：Kalodata、FastMoss、达秘 / TikClubs、TikTok、抖音、小红书、视频号、YouTube、Instagram、飞书、163 邮箱。
+- 用户导出到 `inputs/` 的 CSV、Excel、截图说明或手动记录。
+- 本地软件可见项目：剪映草稿、Office 文件、Obsidian vault。
+
+补采内容：
+
+- 作品播放、曝光、完播、互动、点击、成交、变现。
+- 达人触达、回复、有效回复、报价、寄样、成交和话术版本。
+- 跨境电商选品、达人、竞品、直播/视频表现和询盘质量。
+- 平台后台指标、原始链接、截图/导出文件路径、读取时间和下一步动作。
+
+补采输出：
+
+- `outputs/boot-backfill-YYYY-MM-DD.md`
+- `outputs/account-analytics-YYYY-MM-DD.xlsx`
+- `automation-workbench/data/knowledge-items.json`
+- `automation-workbench/data/business-feedback.json`
+- `automation-workbench/data/task-history.json`
+
+安全边界：
+
+- 遇到登录、验证码、二次验证、权限变更、支付、交易、发布、上传或社交外发时停下，让用户确认。
+- 不读取或保存密码、Cookie、验证码、支付码、交易密码。
+- 无法读取的数据必须标注“待授权/待导出”，不要编造。

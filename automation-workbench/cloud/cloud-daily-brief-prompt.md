@@ -48,6 +48,31 @@
 - 无法核实的信息标注“待核实”。
 - 固定加入“AI 技术最新发展”“预计任务执行成本”“API/token 费用提醒”和“运行与维护成本”。
 
+## 关机后云端信息源边界
+
+电脑关机后，本任务只能使用云端可访问的信息源：
+
+- 公开网页与新闻页
+- RSS feeds
+- AnySearch 或其他搜索 API
+- 金融市场数据 API
+- 官方公告、财报、SEC、HKEXnews 等披露
+- 官方平台博客、帮助中心、开发者文档
+- 公开趋势页或公开视频/账号页
+- 学术元数据 API
+- GitHub 仓库数据
+- 已授权的邮箱 API 与飞书 API
+
+不要声称云端能读取本机夸克浏览器登录态、微信、飞书客户端、剪映、Kalodata/FastMoss/达秘/TikClubs 私有后台、抖音/小红书/视频号账号后台。上述内容只能在电脑开机、用户已登录、页面可见、或用户导出 CSV/Excel/截图到 inputs/ 后，由本地工作台补采。
+
+## 开机后本地补采命令
+
+如果今日云端简报或业务反馈因为关机无法读取账号后台，请在维护报告中加入下一步命令：
+
+```text
+开机后本地平台补采：请打开无垠工作台，读取已登录平台或 inputs/ 导出文件，补齐 Kalodata、FastMoss、达秘 / TikClubs、TikTok、抖音、小红书、视频号、YouTube、Instagram、飞书、163 邮箱和剪映相关的后台数据、作品数据、达人沟通、询盘、转化、变现和来源链接；生成 outputs/boot-backfill-YYYY-MM-DD.md，并更新 automation-workbench/data/knowledge-items.json、business-feedback.json、task-history.json。
+```
+
 ## 写入文件
 
 把完整结果写入：

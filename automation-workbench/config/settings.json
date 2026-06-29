@@ -57,6 +57,26 @@
       "Chinese mainland sources",
       "overseas sources",
       "academic databases"
+    ],
+    "cloudSources": [
+      "public web pages",
+      "RSS feeds",
+      "AnySearch or search APIs",
+      "financial market data APIs",
+      "official filings and disclosures",
+      "official platform blogs or help centers",
+      "public social platform trend pages",
+      "academic metadata APIs",
+      "GitHub repository data",
+      "authorized email and Feishu APIs"
+    ],
+    "offlineLimitations": [
+      "local browser login sessions",
+      "desktop apps",
+      "private platform dashboards without API access",
+      "CAPTCHA or two-factor authentication",
+      "local files that are not pushed or exported",
+      "payment, trading, posting, uploading, or social sending actions"
     ]
   },
   "office": {
@@ -232,6 +252,50 @@
       "timezone": "Asia/Shanghai",
       "weeklyMaintenance": "Monday 09:30",
       "localOfflineBoundary": "Local workbench and local project automations need this PC and Codex app running. PC-off work requires Codex cloud, GitHub Actions, VPS, NAS, or another always-on runner."
+    },
+    "bootBackfill": {
+      "enabled": true,
+      "trigger": "after_pc_boot_or_workbench_start",
+      "purpose": "Backfill account-level platform data that cloud automation cannot access while the PC is powered off.",
+      "platforms": [
+        "Kalodata",
+        "FastMoss",
+        "达秘 / TikClubs",
+        "TikTok",
+        "Douyin",
+        "Xiaohongshu",
+        "WeChat Channels",
+        "YouTube",
+        "Instagram",
+        "Feishu",
+        "163 Email",
+        "JianyingPro"
+      ],
+      "inputs": [
+        "visible logged-in pages",
+        "authorized platform exports",
+        "inputs/*.csv",
+        "inputs/*.xlsx",
+        "screenshots explicitly provided by the user"
+      ],
+      "outputs": [
+        "outputs/boot-backfill-YYYY-MM-DD.md",
+        "outputs/account-analytics-YYYY-MM-DD.xlsx",
+        "automation-workbench/data/knowledge-items.json",
+        "automation-workbench/data/business-feedback.json",
+        "automation-workbench/data/task-history.json"
+      ],
+      "stopFor": [
+        "login",
+        "CAPTCHA",
+        "two-factor verification",
+        "permission changes",
+        "passwords",
+        "payment",
+        "trading",
+        "posting",
+        "social sending"
+      ]
     }
   }
 }

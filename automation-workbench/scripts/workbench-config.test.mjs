@@ -204,3 +204,19 @@ test("settings define platform health and token budget monitoring", async () => 
   assert.equal(settings.maintenance.apiBudget.lowBalanceThresholdCny, 50);
   assert.equal(settings.maintenance.apiBudget.action, "notify_recharge_needed");
 });
+
+test("settings separate cloud sources from boot-time local platform backfill", async () => {
+  const settings = await loadSettings();
+  const config = await loadWorkbenchConfig();
+
+  assert.ok(settings.news.cloudSources.includes("public web pages"));
+  assert.ok(settings.news.cloudSources.includes("RSS feeds"));
+  assert.ok(settings.news.cloudSources.includes("financial market data APIs"));
+  assert.ok(settings.news.offlineLimitations.includes("local browser login sessions"));
+  assert.equal(settings.maintenance.bootBackfill.enabled, true);
+  assert.equal(settings.maintenance.bootBackfill.trigger, "after_pc_boot_or_workbench_start");
+  assert.ok(settings.maintenance.bootBackfill.platforms.includes("Kalodata"));
+  assert.ok(settings.maintenance.bootBackfill.outputs.includes("automation-workbench/data/knowledge-items.json"));
+  assert.match(config.WORKBENCH_PROMPTS.queueCommand, /开机后本地平台补采/);
+  assert.match(config.WORKBENCH_PROMPTS.secondBrainAutonomy, /关机后云端信息源/);
+});
