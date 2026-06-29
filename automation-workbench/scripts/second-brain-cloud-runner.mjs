@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { checkApiBudget } from "./api-budget-monitor.mjs";
 import { updateDailyBriefLibrary } from "./daily-brief-library.mjs";
 import { deliverDraftEmails, getMailRecipients } from "./email-delivery.mjs";
+import { deliverFeishuDoc } from "./feishu-doc-delivery.mjs";
 import { deliverFeishuFallback } from "./feishu-delivery.mjs";
 import { loadRuntimeEnv } from "./runtime-env.mjs";
 
@@ -93,6 +94,8 @@ function tableStatus(status) {
       return "草稿模式";
     case "sent":
       return "已发送";
+    case "delivered_fallback":
+      return "已备用交付";
     case "send_error":
       return "发送失败";
     case "error":
@@ -315,7 +318,28 @@ function makeFeishuFallbackMessage({ date, apiBudget, emailDelivery }) {
   ].join("\n");
 }
 
-function makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery }) {
+function makeFeishuDocMarkdown({ date, dailyBriefBody, businessFeedbackBody, maintenanceReportBody }) {
+  return `# ${date} 无垠每日信息简报同步包
+
+## 信息简报
+
+${dailyBriefBody}
+
+## 业务反馈
+
+${businessFeedbackBody}
+
+## 维护巡检
+
+${maintenanceReportBody}
+`;
+}
+
+function makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery, feishuDocDelivery }) {
+  const docDelivery = feishuDocDelivery || {
+    status: "not_configured",
+    message: "飞书云文档交付未配置。"
+  };
   return `# 第二大脑 v4 维护巡检报告
 
 日期：${date}
@@ -334,6 +358,7 @@ function makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery 
 | 数据中心 JSON | 已检查 | runner 会更新 automation-workbench/data/ |
 | 邮件发送 | ${tableStatus(emailDelivery.status)} | ${emailDelivery.message} |
 | 飞书备用交付 | ${tableStatus(feishuDelivery.status)} | ${feishuDelivery.message} |
+| 飞书云文档交付 | ${tableStatus(docDelivery.status)} | ${docDelivery.message} |
 | API/token 费用 | ${tableStatus(apiBudget.status)} | ${apiBudget.message} |
 | 平台真实接入 | 待本机/待登录核实 | 需要开机、登录态、API 或导出文件 |
 | 金融交易 | 安全模式 | 只做资讯、提醒、纸面交易和人工确认前检查 |
@@ -350,6 +375,12 @@ function makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery 
 - 当前状态：${feishuDelivery.message}
 - 用途：当 GitHub Actions 云端无法连接 163 SMTP 时，自动把今日简报入口和关键状态推送到飞书。
 - 需要配置：GitHub Secrets 中的 FEISHU_WEBHOOK_URL；如果飞书机器人开启签名校验，还需要 FEISHU_WEBHOOK_SECRET。GitHub Variables 可选配置 SEND_FEISHU=true/false。
+
+## 飞书云文档交付
+
+- 当前状态：${docDelivery.message}
+- 用途：把每日信息简报、业务反馈和维护巡检同步到飞书云文档，作为电脑关机后的云端存档入口。
+- 需要配置：GitHub Secrets 中的 FEISHU_APP_ID、FEISHU_APP_SECRET、FEISHU_DOC_ID；GitHub Variables 可选配置 SEND_FEISHU_DOC=true/false。
 
 ## API/token 费用监控
 
@@ -391,14 +422,23 @@ async function writeDailyOutputs({ date, dailyBriefBody, businessFeedbackBody, b
   };
 }
 
-function deliveryStatus(emailDelivery, feishuDelivery) {
+function deliveryStatus(emailDelivery, feishuDelivery, feishuDocDelivery) {
   if (emailDelivery.status === "sent") return "sent";
+  if (feishuDocDelivery?.status === "sent") return "delivered_fallback";
   if (feishuDelivery.status === "sent") return "delivered_fallback";
   return "draft";
 }
 
-async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, feishuDelivery, library }) {
-  const status = deliveryStatus(emailDelivery, feishuDelivery);
+async function alreadyDeliveredToday(date) {
+  const taskHistory = await readJson(path.join(DATA_DIR, STORE_FILES.taskHistory), []);
+  return (Array.isArray(taskHistory) ? taskHistory : []).some((item) =>
+    item?.id === `history-${date}-daily-automation` &&
+    ["sent", "delivered_fallback"].includes(item.deliveryStatus || item.status)
+  );
+}
+
+async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, feishuDelivery, feishuDocDelivery, library }) {
+  const status = deliveryStatus(emailDelivery, feishuDelivery, feishuDocDelivery);
 
   await prependStore("dailyBriefs", {
     id: `daily-brief-${date}`,
@@ -462,6 +502,7 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
     skills: ["anysearch", "documents", "spreadsheets"],
     sources: ["local runner", ...(apiBudget.sources || [])],
     status: "completed",
+    deliveryStatus: status,
     outputs: [
       workspacePath(paths.dailyBriefPath),
       workspacePath(paths.businessFeedbackPath),
@@ -477,6 +518,11 @@ async function recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery
 
 async function runDaily() {
   const date = todayInShanghai();
+  if (await alreadyDeliveredToday(date)) {
+    console.log(`Second Brain daily runner skipped for ${date}: already delivered`);
+    return;
+  }
+
   const timestamp = nowIso();
   const apiBudget = await checkApiBudget({ env: runtimeEnv });
 
@@ -502,7 +548,28 @@ async function runDaily() {
     message: makeFeishuFallbackMessage({ date, apiBudget, emailDelivery })
   });
 
-  const maintenanceReportBody = makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery });
+  const provisionalMaintenanceReportBody = makeMaintenanceReport({
+    date,
+    apiBudget,
+    emailDelivery,
+    feishuDelivery,
+    feishuDocDelivery: {
+      status: "ready_to_send",
+      message: "飞书云文档交付准备同步。"
+    }
+  });
+  const feishuDocDelivery = await deliverFeishuDoc({
+    env: runtimeEnv,
+    title: `${date} 无垠每日信息简报`,
+    markdown: makeFeishuDocMarkdown({
+      date,
+      dailyBriefBody,
+      businessFeedbackBody,
+      maintenanceReportBody: provisionalMaintenanceReportBody
+    })
+  });
+
+  const maintenanceReportBody = makeMaintenanceReport({ date, apiBudget, emailDelivery, feishuDelivery, feishuDocDelivery });
   const paths = await writeDailyOutputs({
     date,
     dailyBriefBody,
@@ -523,7 +590,7 @@ async function runDaily() {
     businessFeedbackBody,
     maintenanceReportBody
   });
-  await recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, feishuDelivery, library });
+  await recordDailyRun({ date, timestamp, paths, apiBudget, emailDelivery, feishuDelivery, feishuDocDelivery, library });
 
   console.log(`Second Brain daily runner completed for ${date}`);
 }

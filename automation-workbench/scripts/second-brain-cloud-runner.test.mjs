@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { copyFile, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
@@ -30,7 +30,9 @@ function safeTestEnv(overrides = {}) {
 }
 
 async function copyRunnerFixture() {
-  const tmpRoot = await mkdtemp(path.join(path.dirname(SCRIPT_DIR), ".tmp", "cloud-runner-"));
+  const tmpParent = path.join(path.dirname(SCRIPT_DIR), ".tmp");
+  await mkdir(tmpParent, { recursive: true });
+  const tmpRoot = await mkdtemp(path.join(tmpParent, "cloud-runner-"));
   const scriptsDir = path.join(tmpRoot, "automation-workbench", "scripts");
   const dataDir = path.join(tmpRoot, "automation-workbench", "data");
   await mkdir(scriptsDir, { recursive: true });
@@ -41,6 +43,7 @@ async function copyRunnerFixture() {
     "api-budget-monitor.mjs",
     "email-delivery.mjs",
     "feishu-delivery.mjs",
+    "feishu-doc-delivery.mjs",
     "daily-brief-library.mjs",
     "runtime-env.mjs"
   ]) {
@@ -266,6 +269,52 @@ test("daily cloud runner always updates the daily brief library when email is dr
     assert.ok(taskHistory[0].outputs.includes("outputs/daily-brief-latest.md"));
     assert.ok(taskHistory[0].outputs.includes("outputs/daily-brief-index.md"));
     assert.ok(taskHistory[0].outputs.some((item) => item.startsWith("outputs/daily-brief-sync-pack-")));
+  } finally {
+    await rm(fixture.tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test("daily cloud runner skips duplicate delivery after today's successful cloud run", async () => {
+  const fixture = await copyRunnerFixture();
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+
+  try {
+    await writeFile(
+      path.join(fixture.dataDir, "task-history.json"),
+      JSON.stringify([
+        {
+          id: `history-${today}-daily-automation`,
+          createdAt: new Date().toISOString(),
+          date: today,
+          status: "completed",
+          deliveryStatus: "sent",
+          outputs: [`outputs/daily-brief-${today}.md`]
+        }
+      ], null, 2),
+      "utf8"
+    );
+
+    const result = spawnSync(process.execPath, [
+      "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+      "daily"
+    ], {
+      cwd: fixture.tmpRoot,
+      encoding: "utf8",
+      env: safeTestEnv({
+        SMTP_HOST: "smtp.example.test",
+        SMTP_PORT: "465",
+        SMTP_USER: "jacky060911@163.com",
+        SMTP_PASS: "secret",
+        MAIL_FROM: "jacky060911@163.com",
+        SEND_EMAIL: "true"
+      })
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /already delivered/);
+
+    const taskHistory = JSON.parse(await readFile(path.join(fixture.dataDir, "task-history.json"), "utf8"));
+    assert.equal(taskHistory.length, 1);
   } finally {
     await rm(fixture.tmpRoot, { recursive: true, force: true });
   }

@@ -33,6 +33,7 @@ async function makeFixture() {
     "automation-workbench/scripts/api-budget-monitor.mjs",
     "automation-workbench/scripts/email-delivery.mjs",
     "automation-workbench/scripts/feishu-delivery.mjs",
+    "automation-workbench/scripts/feishu-doc-delivery.mjs",
     "automation-workbench/scripts/daily-brief-library.mjs",
     ".github/workflows/second-brain-daily.yml",
     ".github/workflows/second-brain-weekly.yml",

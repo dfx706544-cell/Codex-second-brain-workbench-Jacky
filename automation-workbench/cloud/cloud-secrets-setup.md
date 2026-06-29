@@ -130,6 +130,30 @@ https://github.com/dfx706544-cell/Codex-second-brain-workbench-Jacky/settings/se
 
 注意：Webhook 属于敏感地址，不要发到聊天框、不要写入仓库文件，只放到 GitHub Secrets。
 
+## 飞书云文档同步
+
+如果希望电脑关机后也能把每日信息简报沉淀到一个云端文件，可以使用飞书开放平台应用把同步包追加到指定云文档。这个通道适合长期存档和查询；它不是即时通知，所以建议和邮件或飞书机器人同时保留。
+
+在 GitHub Secrets 里添加：
+
+| 名称 | 用途 |
+| --- | --- |
+| `FEISHU_APP_ID` | 飞书开放平台自建应用的 App ID |
+| `FEISHU_APP_SECRET` | 飞书开放平台自建应用的 App Secret |
+| `FEISHU_DOC_ID` | 要写入的飞书云文档 token/document id |
+
+在 GitHub Variables 里可选添加：
+
+| 名称 | 值 |
+| --- | --- |
+| `SEND_FEISHU_DOC` | `true` 开启，`false` 关闭；不填时默认开启云文档同步 |
+
+飞书云文档同步需要在飞书开放平台给自建应用开通云文档相关权限，并把目标文档授权给该应用。未完成授权时，runner 会继续生成 GitHub outputs 和邮件草稿，并在维护报告里标注飞书云文档交付失败或待配置。
+
+## 8 点调度兜底
+
+GitHub Actions 的 `schedule` 使用 UTC 时间，并且不是严格实时调度；在高负载或平台调度异常时，可能延迟甚至漏触发。因此每日 workflow 现在配置为北京时间 8:00、8:10、8:30、9:00 多次兜底触发。runner 会检查当天是否已成功交付，已成功时直接跳过，避免重复发多封邮件或重复写入云文档。
+
 ## 手动测试云端任务
 
 进入 GitHub 仓库：
