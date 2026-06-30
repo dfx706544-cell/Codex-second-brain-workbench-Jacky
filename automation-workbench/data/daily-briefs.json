@@ -1,5 +1,22 @@
 [
   {
+    "id": "daily-brief-2026-06-30",
+    "createdAt": "2026-06-30T11:28:03.689Z",
+    "date": "2026-06-30",
+    "title": "2026-06-30 第二大脑 v4 信息简报",
+    "summary": "云端 runner 已生成信息简报；实时新闻和平台数据按可用搜索/API/授权状态补充。",
+    "outputs": [
+      "outputs/daily-brief-2026-06-30.md",
+      "outputs/email-draft-daily-brief-2026-06-30.md",
+      "outputs/daily-brief-latest.md",
+      "outputs/business-feedback-latest.md",
+      "outputs/daily-brief-sync-pack-2026-06-30.md",
+      "outputs/daily-brief-sync-pack-latest.md",
+      "outputs/daily-brief-index.md"
+    ],
+    "status": "delivered_fallback"
+  },
+  {
     "id": "daily-brief-2026-06-29",
     "createdAt": "2026-06-29T05:49:48.244Z",
     "date": "2026-06-29",
