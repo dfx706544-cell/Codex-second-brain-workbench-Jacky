@@ -1,4 +1,5 @@
-name: Publish Workbench Cloud Share
+name: "03 Workbench Pages - Publish Web App"
+run-name: "Workbench Pages publish by @${{ github.actor }}"
 
 on:
   workflow_dispatch:
@@ -21,6 +22,7 @@ concurrency:
 
 jobs:
   build:
+    name: "Build public workbench site"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,6 +42,7 @@ jobs:
           path: .pages-site
 
   deploy:
+    name: "Deploy public workbench site"
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

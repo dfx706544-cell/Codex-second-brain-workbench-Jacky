@@ -1,4 +1,5 @@
-name: Second Brain Daily Draft
+name: "01 Daily Brief - Generate & Email"
+run-name: "Daily brief by @${{ github.actor }}"
 
 on:
   workflow_dispatch:
@@ -13,6 +14,7 @@ permissions:
 
 jobs:
   daily:
+    name: "Generate daily brief, business feedback, maintenance report"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
