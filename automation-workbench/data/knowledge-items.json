@@ -1,5 +1,44 @@
 [
   {
+    "id": "knowledge-2026-07-15-daily-automation",
+    "createdAt": "2026-07-15T07:29:54.189Z",
+    "publishedAt": "2026-07-15",
+    "title": "第二大脑 v4 每日自动化运行记录",
+    "summaryZh": "每日 runner 负责生成信息简报、业务反馈、维护巡检、邮件草稿，并在 SMTP 授权后自动发往两个邮箱。",
+    "sourceUrl": "automation-workbench/scripts/second-brain-cloud-runner.mjs",
+    "sourceName": "Second Brain Cloud Runner",
+    "domain": "system",
+    "tags": [
+      "第二大脑",
+      "自动化",
+      "邮件",
+      "知识库",
+      "历史记录"
+    ],
+    "credibility": "本地脚本和自动化运行记录",
+    "impact": "为关机后的周期性任务提供可执行骨架；真实新闻、账号数据和余额仍依赖云端密钥或平台授权。",
+    "nextAction": "配置 AnySearch、SMTP、米促 API 余额查询和平台数据导出/授权。"
+  },
+  {
+    "id": "knowledge-2026-07-15-automation-boundary",
+    "createdAt": "2026-07-15T07:29:54.189Z",
+    "publishedAt": "2026-07-15",
+    "title": "本地工作台与云端后台自动化边界",
+    "summaryZh": "本地工作台关机后不能运行；电脑关机后继续执行必须依赖 Codex 定时自动化、GitHub Actions、VPS/NAS 或其他常久在线服务。",
+    "sourceUrl": "automation-workbench/cloud/README.md",
+    "sourceName": "Second Brain Cloud Notes",
+    "domain": "system",
+    "tags": [
+      "云端",
+      "本地化",
+      "关机后运行",
+      "自我迭代"
+    ],
+    "credibility": "项目架构记录",
+    "impact": "帮助区分哪些任务能后台执行，哪些任务必须开机和登录后处理。",
+    "nextAction": "把每日信息简报和业务反馈放到云端；把本机平台操作放到开机后的工作台。"
+  },
+  {
     "id": "knowledge-2026-07-14-daily-automation",
     "createdAt": "2026-07-14T07:23:41.236Z",
     "publishedAt": "2026-07-14",
