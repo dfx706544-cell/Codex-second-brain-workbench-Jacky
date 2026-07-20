@@ -1,5 +1,28 @@
 [
   {
+    "id": "history-2026-07-20-weekly-evolution-runner",
+    "createdAt": "2026-07-20T11:59:12.978Z",
+    "completedAt": "2026-07-20T11:59:12.978Z",
+    "category": "system",
+    "userText": "运行第二大脑 v4 每周自我迭代审计",
+    "primaryAssistant": "维护助手",
+    "secondaryAssistants": [
+      "Skill Scout"
+    ],
+    "skills": [
+      "documents"
+    ],
+    "sources": [
+      "local runner"
+    ],
+    "status": "completed",
+    "outputs": [
+      "outputs/weekly-evolution-audit-2026-07-20.md"
+    ],
+    "summary": "已生成每周自我迭代审计报告。",
+    "nextAction": "根据审计结果修复不可用平台、失效自动化、缺失密钥或数据同步问题。"
+  },
+  {
     "id": "history-2026-07-20-daily-automation",
     "createdAt": "2026-07-20T10:32:54.709Z",
     "completedAt": "2026-07-20T10:32:54.709Z",
