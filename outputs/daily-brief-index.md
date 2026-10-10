@@ -1,6 +1,6 @@
 # 每日简报库索引
 
-更新时间：2026-10-09T04:04:00.750Z
+更新时间：2026-10-10T03:49:29.461Z
 
 ## 固定入口
 
@@ -22,5 +22,5 @@
 
 ## 最新文件状态
 
-- latest brief bytes: 6331
+- latest brief bytes: 6332
 - latest feedback bytes: 3033
